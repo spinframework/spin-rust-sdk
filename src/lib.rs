@@ -99,14 +99,10 @@ pub mod redis {
     }
 }
 
-/// Spin 2 Postgres relational database storage. Applications that do not require
-/// Spin 2 support should use the `pg3` module instead.
 pub mod pg;
 
-/// Postgres relational database storage.
 pub mod pg3;
 
-/// MySQL relational database storage.
 pub mod mysql;
 
 #[doc(inline)]

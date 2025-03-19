@@ -1,4 +1,9 @@
-//! Conversions between Rust, WIT and **Postgres** types.
+//! Postgres relational database storage.
+//! 
+//! You can use the [`into()`](std::convert::Into) method to convert
+//! a Rust value into a [`ParameterValue`]. You can use the
+//! [`Decode`] trait to convert a [`DbValue`] to a suitable Rust type.
+//! The following table shows available conversions.
 //!
 //! # Types
 //!
@@ -17,18 +22,117 @@
 //! | `chrono::NaiveDateTime` | datetime(tuple<s32, u8, u8, u8, u8, u8, u32>) | TIMESTAMP                    |
 //! | `chrono::Duration`      | timestamp(s64)                                | BIGINT                       |
 
+/// An open connection to a PostgreSQL database.
+/// 
+/// # Examples
+/// 
+/// Load a set of rows from a local PostgreSQL database, and iterate over them.
+/// 
+/// ```no_run
+/// use spin_sdk::pg3::{Connection, Decode};
+///
+/// # fn main() -> anyhow::Result<()> {
+/// # let min_age = 0;
+/// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb")?;
+///
+/// let query_result = db.query(
+///     "SELECT * FROM users WHERE age >= $1",
+///     &[min_age.into()]
+/// )?;
+///
+/// let name_index = query_result.columns.iter().position(|c| c.name == "name").unwrap();
+///
+/// for row in &query_result.rows {
+///     let name = String::decode(&row[name_index])?;
+///     println!("Found user {name}");
+/// }
+/// # Ok(())
+/// # }
+/// ```
+/// 
+/// Perform an aggregate (scalar) operation over a table. The result set
+/// contains a single column, with a single row.
+/// 
+/// ```no_run
+/// use spin_sdk::pg3::{Connection, Decode};
+///
+/// # fn main() -> anyhow::Result<()> {
+/// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb")?;
+///
+/// let query_result = db.query("SELECT COUNT(*) FROM users", &[])?;
+///
+/// assert_eq!(1, query_result.columns.len());
+/// assert_eq!("count", query_result.columns[0].name);
+/// assert_eq!(1, query_result.rows.len());
+///
+/// let count = i64::decode(&query_result.rows[0][0])?;
+/// # Ok(())
+/// # }
+/// ```
+/// 
+/// Delete rows from a PostgreSQL table. This uses [Connection::execute()]
+/// instead of the `query` method.
+///
+/// ```no_run
+/// use spin_sdk::pg3::Connection;
+///
+/// # fn main() -> anyhow::Result<()> {
+/// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb")?;
+///
+/// let rows_affected = db.execute(
+///     "DELETE FROM users WHERE name = $1",
+///     &["Baldrick".to_owned().into()]
+/// )?;
+/// # Ok(())
+/// # }
+/// ```
+#[doc(inline)]
+pub use super::wit::pg3::Connection;
+
+/// The result of a database query.
+///
+/// # Examples
+/// 
+/// Load a set of rows from a local PostgreSQL database, and iterate over them
+/// selecting one field from each. The columns collection allows you to find
+/// column indexes for column names; you can bypass this lookup if you name
+/// specific columns in the query.
+/// 
+/// ```no_run
+/// use spin_sdk::pg3::{Connection, Decode};
+///
+/// # fn main() -> anyhow::Result<()> {
+/// # let min_age = 0;
+/// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb")?;
+///
+/// let query_result = db.query(
+///     "SELECT * FROM users WHERE age >= $1",
+///     &[min_age.into()]
+/// )?;
+///
+/// let name_index = query_result.columns.iter().position(|c| c.name == "name").unwrap();
+///
+/// for row in &query_result.rows {
+///     let name = String::decode(&row[name_index])?;
+///     println!("Found user {name}");
+/// }
+/// # Ok(())
+/// # }
+/// ```
+pub use super::wit::pg3::RowSet;
+
 #[doc(inline)]
 pub use super::wit::pg3::{Error as PgError, *};
 
 use chrono::{Datelike, Timelike};
 
-/// A pg error
+/// A Postgres error
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     /// Failed to deserialize [`DbValue`]
     #[error("error value decoding: {0}")]
     Decode(String),
-    /// Pg query failed with an error
+    /// Postgres query failed with an error
     #[error(transparent)]
     PgError(#[from] PgError),
 }
