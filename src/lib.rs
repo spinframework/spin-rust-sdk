@@ -105,9 +105,7 @@ pub mod pg3;
 
 pub mod mysql;
 
-#[doc(inline)]
-/// Component configuration variables.
-pub use wit::v2::variables;
+pub mod variables;
 
 #[doc(hidden)]
 pub use wit_bindgen;
