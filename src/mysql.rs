@@ -1,5 +1,5 @@
 //! MySQL relational database storage.
-//! 
+//!
 //! You can use the [`Decode`] trait to convert a [`DbValue`] to a
 //! suitable Rust type. The following table shows available conversions.
 //!
@@ -22,11 +22,11 @@
 //! | `Vec<u8>` | binary(list\<u8\>)  | VARBINARY, BINARY, BLOB |
 
 /// An open connection to a MySQL database.
-/// 
+///
 /// # Examples
-/// 
+///
 /// Load a set of rows from a local PostgreSQL database, and iterate over them.
-/// 
+///
 /// ```no_run
 /// use spin_sdk::mysql::{Connection, Decode, ParameterValue};
 ///
@@ -48,10 +48,10 @@
 /// # Ok(())
 /// # }
 /// ```
-/// 
+///
 /// Perform an aggregate (scalar) operation over a table. The result set
 /// contains a single column, with a single row.
-/// 
+///
 /// ```no_run
 /// use spin_sdk::mysql::{Connection, Decode};
 ///
@@ -68,7 +68,7 @@
 /// # Ok(())
 /// # }
 /// ```
-/// 
+///
 /// Delete rows from a MySQL table. This uses [Connection::execute()]
 /// instead of the `query` method.
 ///
@@ -91,12 +91,12 @@ pub use super::wit::v2::mysql::Connection;
 /// The result of a database query.
 ///
 /// # Examples
-/// 
+///
 /// Load a set of rows from a local PostgreSQL database, and iterate over them
 /// selecting one field from each. The columns collection allows you to find
 /// column indexes for column names; you can bypass this lookup if you name
 /// specific columns in the query.
-/// 
+///
 /// ```no_run
 /// use spin_sdk::mysql::{Connection, Decode, ParameterValue};
 ///

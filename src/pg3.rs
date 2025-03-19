@@ -1,5 +1,5 @@
 //! Postgres relational database storage.
-//! 
+//!
 //! You can use the [`into()`](std::convert::Into) method to convert
 //! a Rust value into a [`ParameterValue`]. You can use the
 //! [`Decode`] trait to convert a [`DbValue`] to a suitable Rust type.
@@ -23,11 +23,11 @@
 //! | `chrono::Duration`      | timestamp(s64)                                | BIGINT                       |
 
 /// An open connection to a PostgreSQL database.
-/// 
+///
 /// # Examples
-/// 
+///
 /// Load a set of rows from a local PostgreSQL database, and iterate over them.
-/// 
+///
 /// ```no_run
 /// use spin_sdk::pg3::{Connection, Decode};
 ///
@@ -49,10 +49,10 @@
 /// # Ok(())
 /// # }
 /// ```
-/// 
+///
 /// Perform an aggregate (scalar) operation over a table. The result set
 /// contains a single column, with a single row.
-/// 
+///
 /// ```no_run
 /// use spin_sdk::pg3::{Connection, Decode};
 ///
@@ -69,7 +69,7 @@
 /// # Ok(())
 /// # }
 /// ```
-/// 
+///
 /// Delete rows from a PostgreSQL table. This uses [Connection::execute()]
 /// instead of the `query` method.
 ///
@@ -92,12 +92,12 @@ pub use super::wit::pg3::Connection;
 /// The result of a database query.
 ///
 /// # Examples
-/// 
+///
 /// Load a set of rows from a local PostgreSQL database, and iterate over them
 /// selecting one field from each. The columns collection allows you to find
 /// column indexes for column names; you can bypass this lookup if you name
 /// specific columns in the query.
-/// 
+///
 /// ```no_run
 /// use spin_sdk::pg3::{Connection, Decode};
 ///

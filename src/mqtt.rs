@@ -1,11 +1,11 @@
 //! MQTT message publishing.
-//! 
+//!
 //! To receive MQTT messages, use the MQTT trigger.
-//! 
+//!
 //! # Examples
-//! 
+//!
 //! Send an MQTT message.
-//! 
+//!
 //! ```no_run
 //! use spin_sdk::mqtt::{Connection, Qos};
 //!
@@ -30,14 +30,14 @@
 //! ```
 
 /// An open connection to an MQTT queue.
-/// 
+///
 /// The address must be in URL form, and must include a `client_id`:
 /// `mqtt://hostname?client_id=...`
-/// 
+///
 /// # Examples
-/// 
+///
 /// Send an MQTT message.
-/// 
+///
 /// ```no_run
 /// use spin_sdk::mqtt::{Connection, Qos};
 ///
