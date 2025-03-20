@@ -178,7 +178,6 @@ pub use sqlite::QueryResult;
 /// # Ok(())
 /// # }
 /// ```
-
 #[doc(inline)]
 pub use sqlite::RowResult;
 

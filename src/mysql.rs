@@ -1,4 +1,7 @@
-//! Conversions between Rust, WIT and **MySQL** types.
+//! MySQL relational database storage.
+//!
+//! You can use the [`Decode`] trait to convert a [`DbValue`] to a
+//! suitable Rust type. The following table shows available conversions.
 //!
 //! # Types
 //!
@@ -18,8 +21,109 @@
 //! | `String`  | str(string)         | VARCHAR, CHAR, TEXT     |
 //! | `Vec<u8>` | binary(list\<u8\>)  | VARBINARY, BINARY, BLOB |
 
+/// An open connection to a MySQL database.
+///
+/// # Examples
+///
+/// Load a set of rows from a local PostgreSQL database, and iterate over them.
+///
+/// ```no_run
+/// use spin_sdk::mysql::{Connection, Decode, ParameterValue};
+///
+/// # fn main() -> anyhow::Result<()> {
+/// # let min_age = 0;
+/// let db = Connection::open("mysql://root:my_password@localhost/mydb")?;
+///
+/// let query_result = db.query(
+///     "SELECT * FROM users WHERE age < ?",
+///     &[ParameterValue::Int32(20)]
+/// )?;
+///
+/// let name_index = query_result.columns.iter().position(|c| c.name == "name").unwrap();
+///
+/// for row in &query_result.rows {
+///     let name = String::decode(&row[name_index])?;
+///     println!("Found user {name}");
+/// }
+/// # Ok(())
+/// # }
+/// ```
+///
+/// Perform an aggregate (scalar) operation over a table. The result set
+/// contains a single column, with a single row.
+///
+/// ```no_run
+/// use spin_sdk::mysql::{Connection, Decode};
+///
+/// # fn main() -> anyhow::Result<()> {
+/// let db = Connection::open("mysql://root:my_password@localhost/mydb")?;
+///
+/// let query_result = db.query("SELECT COUNT(*) FROM users", &[])?;
+///
+/// assert_eq!(1, query_result.columns.len());
+/// assert_eq!("COUNT(*)", query_result.columns[0].name);
+/// assert_eq!(1, query_result.rows.len());
+///
+/// let count = i64::decode(&query_result.rows[0][0])?;
+/// # Ok(())
+/// # }
+/// ```
+///
+/// Delete rows from a MySQL table. This uses [Connection::execute()]
+/// instead of the `query` method.
+///
+/// ```no_run
+/// use spin_sdk::mysql::{Connection, ParameterValue};
+///
+/// # fn main() -> anyhow::Result<()> {
+/// let db = Connection::open("mysql://root:my_password@localhost/mydb")?;
+///
+/// let rows_affected = db.execute(
+///     "DELETE FROM users WHERE name = ?",
+///     &[ParameterValue::Str("Baldrick".to_owned())]
+/// )?;
+/// # Ok(())
+/// # }
+/// ```
 #[doc(inline)]
-pub use super::wit::v2::mysql::{Connection, Error as MysqlError};
+pub use super::wit::v2::mysql::Connection;
+
+/// The result of a database query.
+///
+/// # Examples
+///
+/// Load a set of rows from a local PostgreSQL database, and iterate over them
+/// selecting one field from each. The columns collection allows you to find
+/// column indexes for column names; you can bypass this lookup if you name
+/// specific columns in the query.
+///
+/// ```no_run
+/// use spin_sdk::mysql::{Connection, Decode, ParameterValue};
+///
+/// # fn main() -> anyhow::Result<()> {
+/// # let min_age = 0;
+/// let db = Connection::open("mysql://root:my_password@localhost/mydb")?;
+///
+/// let query_result = db.query(
+///     "SELECT * FROM users WHERE age >= ?",
+///     &[ParameterValue::Int32(min_age)]
+/// )?;
+///
+/// let name_index = query_result.columns.iter().position(|c| c.name == "name").unwrap();
+///
+/// for row in &query_result.rows {
+///     let name = String::decode(&row[name_index])?;
+///     println!("Found user {name}");
+/// }
+/// # Ok(())
+/// # }
+/// ```
+#[doc(inline)]
+pub use super::wit::v2::mysql::RowSet;
+
+#[doc(inline)]
+pub use super::wit::v2::mysql::Error as MysqlError;
+
 #[doc(inline)]
 pub use super::wit::v2::rdbms_types::*;
 

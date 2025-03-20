@@ -57,61 +57,19 @@ extern "C" fn __spin_sdk_hash() {}
 /// Helpers for building Spin `wasi-http` components.
 pub mod http;
 
-/// MQTT messaging.
 #[allow(missing_docs)]
-pub mod mqtt {
-    pub use super::wit::v2::mqtt::{Connection, Error, Payload, Qos};
-}
+pub mod mqtt;
 
-/// Redis storage and messaging.
 #[allow(missing_docs)]
-pub mod redis {
-    use std::hash::{Hash, Hasher};
+pub mod redis;
 
-    pub use super::wit::v2::redis::{Connection, Error, Payload, RedisParameter, RedisResult};
-
-    impl PartialEq for RedisResult {
-        fn eq(&self, other: &Self) -> bool {
-            use RedisResult::*;
-            match (self, other) {
-                (Nil, Nil) => true,
-                (Status(a), Status(b)) => a == b,
-                (Int64(a), Int64(b)) => a == b,
-                (Binary(a), Binary(b)) => a == b,
-                _ => false,
-            }
-        }
-    }
-
-    impl Eq for RedisResult {}
-
-    impl Hash for RedisResult {
-        fn hash<H: Hasher>(&self, state: &mut H) {
-            use RedisResult::*;
-
-            match self {
-                Nil => (),
-                Status(s) => s.hash(state),
-                Int64(v) => v.hash(state),
-                Binary(v) => v.hash(state),
-            }
-        }
-    }
-}
-
-/// Spin 2 Postgres relational database storage. Applications that do not require
-/// Spin 2 support should use the `pg3` module instead.
 pub mod pg;
 
-/// Postgres relational database storage.
 pub mod pg3;
 
-/// MySQL relational database storage.
 pub mod mysql;
 
-#[doc(inline)]
-/// Component configuration variables.
-pub use wit::v2::variables;
+pub mod variables;
 
 #[doc(hidden)]
 pub use wit_bindgen;
