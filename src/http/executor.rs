@@ -1,6 +1,7 @@
 use crate::wit::wasi::http0_2_0::outgoing_handler;
 use crate::wit::wasi::http0_2_0::types::{
-    ErrorCode, IncomingBody, IncomingResponse, OutgoingBody, OutgoingRequest,
+    ErrorCode, FutureIncomingResponse, IncomingBody, IncomingResponse, OutgoingBody,
+    OutgoingRequest,
 };
 
 use spin_executor::bindings::wasi::io;
@@ -8,7 +9,7 @@ use spin_executor::bindings::wasi::io::streams::{InputStream, OutputStream, Stre
 
 use futures::{future, sink, stream, Sink, Stream};
 
-pub use spin_executor::run;
+pub use spin_executor::{run, CancelOnDropToken};
 
 use std::cell::RefCell;
 use std::future::Future;
@@ -18,11 +19,16 @@ use std::task::Poll;
 const READ_SIZE: u64 = 16 * 1024;
 
 pub(crate) fn outgoing_body(body: OutgoingBody) -> impl Sink<Vec<u8>, Error = StreamError> {
-    struct Outgoing(Option<(OutputStream, OutgoingBody)>);
+    struct Outgoing {
+        stream_and_body: Option<(OutputStream, OutgoingBody)>,
+        cancel_token: Option<CancelOnDropToken>,
+    }
 
     impl Drop for Outgoing {
         fn drop(&mut self) {
-            if let Some((stream, body)) = self.0.take() {
+            drop(self.cancel_token.take());
+
+            if let Some((stream, body)) = self.stream_and_body.take() {
                 drop(stream);
                 _ = OutgoingBody::finish(body, None);
             }
@@ -30,25 +36,29 @@ pub(crate) fn outgoing_body(body: OutgoingBody) -> impl Sink<Vec<u8>, Error = St
     }
 
     let stream = body.write().expect("response body should be writable");
-    let pair = Rc::new(RefCell::new(Outgoing(Some((stream, body)))));
+    let outgoing = Rc::new(RefCell::new(Outgoing {
+        stream_and_body: Some((stream, body)),
+        cancel_token: None,
+    }));
 
     sink::unfold((), {
         move |(), chunk: Vec<u8>| {
             future::poll_fn({
                 let mut offset = 0;
                 let mut flushing = false;
-                let pair = pair.clone();
+                let outgoing = outgoing.clone();
 
                 move |context| {
-                    let pair = pair.borrow();
-                    let (stream, _) = &pair.0.as_ref().unwrap();
+                    let mut outgoing = outgoing.borrow_mut();
+                    let (stream, _) = &outgoing.stream_and_body.as_ref().unwrap();
                     loop {
                         match stream.check_write() {
                             Ok(0) => {
-                                spin_executor::push_waker(
-                                    stream.subscribe(),
-                                    context.waker().clone(),
-                                );
+                                outgoing.cancel_token =
+                                    Some(CancelOnDropToken::from(spin_executor::push_waker(
+                                        stream.subscribe(),
+                                        context.waker().clone(),
+                                    )));
                                 break Poll::Pending;
                             }
                             Ok(count) => {
@@ -93,14 +103,33 @@ pub(crate) fn outgoing_body(body: OutgoingBody) -> impl Sink<Vec<u8>, Error = St
 pub(crate) fn outgoing_request_send(
     request: OutgoingRequest,
 ) -> impl Future<Output = Result<IncomingResponse, ErrorCode>> {
+    struct State {
+        response: Option<Result<FutureIncomingResponse, ErrorCode>>,
+        cancel_token: Option<CancelOnDropToken>,
+    }
+
+    impl Drop for State {
+        fn drop(&mut self) {
+            drop(self.cancel_token.take());
+            drop(self.response.take());
+        }
+    }
+
     let response = outgoing_handler::handle(request, None);
+    let mut state = State {
+        response: Some(response),
+        cancel_token: None,
+    };
     future::poll_fn({
-        move |context| match &response {
+        move |context| match &state.response.as_ref().unwrap() {
             Ok(response) => {
                 if let Some(response) = response.get() {
                     Poll::Ready(response.unwrap())
                 } else {
-                    spin_executor::push_waker(response.subscribe(), context.waker().clone());
+                    state.cancel_token = Some(CancelOnDropToken::from(spin_executor::push_waker(
+                        response.subscribe(),
+                        context.waker().clone(),
+                    )));
                     Poll::Pending
                 }
             }
@@ -113,11 +142,16 @@ pub(crate) fn outgoing_request_send(
 pub fn incoming_body(
     body: IncomingBody,
 ) -> impl Stream<Item = Result<Vec<u8>, io::streams::Error>> {
-    struct Incoming(Option<(InputStream, IncomingBody)>);
+    struct Incoming {
+        stream_and_body: Option<(InputStream, IncomingBody)>,
+        cancel_token: Option<CancelOnDropToken>,
+    }
 
     impl Drop for Incoming {
         fn drop(&mut self) {
-            if let Some((stream, body)) = self.0.take() {
+            drop(self.cancel_token.take());
+
+            if let Some((stream, body)) = self.stream_and_body.take() {
                 drop(stream);
                 IncomingBody::finish(body);
             }
@@ -126,14 +160,21 @@ pub fn incoming_body(
 
     stream::poll_fn({
         let stream = body.stream().expect("response body should be readable");
-        let pair = Incoming(Some((stream, body)));
+        let mut incoming = Incoming {
+            stream_and_body: Some((stream, body)),
+            cancel_token: None,
+        };
 
         move |context| {
-            if let Some((stream, _)) = &pair.0 {
+            if let Some((stream, _)) = &incoming.stream_and_body {
                 match stream.read(READ_SIZE) {
                     Ok(buffer) => {
                         if buffer.is_empty() {
-                            spin_executor::push_waker(stream.subscribe(), context.waker().clone());
+                            incoming.cancel_token =
+                                Some(CancelOnDropToken::from(spin_executor::push_waker(
+                                    stream.subscribe(),
+                                    context.waker().clone(),
+                                )));
                             Poll::Pending
                         } else {
                             Poll::Ready(Some(Ok(buffer)))

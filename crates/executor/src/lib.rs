@@ -1,6 +1,7 @@
 use bindings::wasi::io;
 use std::future::Future;
 use std::mem;
+use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Wake, Waker};
 
@@ -20,11 +21,42 @@ impl std::fmt::Display for io::streams::Error {
 
 impl std::error::Error for io::streams::Error {}
 
-static WAKERS: Mutex<Vec<(io::poll::Pollable, Waker)>> = Mutex::new(Vec::new());
+type Wrapped = Arc<Mutex<Option<io::poll::Pollable>>>;
+
+static WAKERS: Mutex<Vec<(Wrapped, Waker)>> = Mutex::new(Vec::new());
+
+/// Handle to a Pollable pushed using `push_waker` which may be used to cancel
+/// and drop the Pollable.
+pub struct CancelToken(Wrapped);
+
+impl CancelToken {
+    /// Cancel and drop the Pollable.
+    pub fn cancel(self) {
+        drop(self.0.lock().unwrap().take())
+    }
+}
+
+/// Handle to a Pollable pushed using `push_waker` which, when dropped, will
+/// cancel and drop the Pollable.
+pub struct CancelOnDropToken(Wrapped);
+
+impl From<CancelToken> for CancelOnDropToken {
+    fn from(token: CancelToken) -> Self {
+        Self(token.0)
+    }
+}
+
+impl Drop for CancelOnDropToken {
+    fn drop(&mut self) {
+        drop(self.0.lock().unwrap().take())
+    }
+}
 
 /// Push a Pollable and Waker to WAKERS.
-pub fn push_waker(pollable: io::poll::Pollable, waker: Waker) {
-    WAKERS.lock().unwrap().push((pollable, waker));
+pub fn push_waker(pollable: io::poll::Pollable, waker: Waker) -> CancelToken {
+    let wrapped = Arc::new(Mutex::new(Some(pollable)));
+    WAKERS.lock().unwrap().push((wrapped.clone(), waker));
+    CancelToken(wrapped)
 }
 
 /// Run the specified future to completion blocking until it yields a result.
@@ -45,13 +77,17 @@ pub fn run<T>(future: impl Future<Output = T>) -> T {
             Poll::Pending => {
                 let mut new_wakers = Vec::new();
 
-                let wakers = mem::take::<Vec<_>>(&mut WAKERS.lock().unwrap());
-
-                assert!(!wakers.is_empty());
+                let wakers = mem::take(WAKERS.lock().unwrap().deref_mut())
+                    .into_iter()
+                    .filter_map(|(wrapped, waker)| {
+                        let pollable = wrapped.lock().unwrap().take();
+                        pollable.map(|pollable| (wrapped, pollable, waker))
+                    })
+                    .collect::<Vec<_>>();
 
                 let pollables = wakers
                     .iter()
-                    .map(|(pollable, _)| pollable)
+                    .map(|(_, pollable, _)| pollable)
                     .collect::<Vec<_>>();
 
                 let mut ready = vec![false; wakers.len()];
@@ -60,11 +96,12 @@ pub fn run<T>(future: impl Future<Output = T>) -> T {
                     ready[usize::try_from(index).unwrap()] = true;
                 }
 
-                for (ready, (pollable, waker)) in ready.into_iter().zip(wakers) {
+                for (ready, (wrapped, pollable, waker)) in ready.into_iter().zip(wakers) {
                     if ready {
                         waker.wake()
                     } else {
-                        new_wakers.push((pollable, waker));
+                        *wrapped.lock().unwrap() = Some(pollable);
+                        new_wakers.push((wrapped, waker));
                     }
                 }
 
