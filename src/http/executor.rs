@@ -54,11 +54,12 @@ pub(crate) fn outgoing_body(body: OutgoingBody) -> impl Sink<Vec<u8>, Error = St
                     loop {
                         match stream.check_write() {
                             Ok(0) => {
-                                outgoing.cancel_token =
-                                    Some(CancelOnDropToken::from(spin_executor::push_waker(
+                                outgoing.cancel_token = Some(CancelOnDropToken::from(
+                                    spin_executor::push_waker_and_get_token(
                                         stream.subscribe(),
                                         context.waker().clone(),
-                                    )));
+                                    ),
+                                ));
                                 break Poll::Pending;
                             }
                             Ok(count) => {
@@ -126,10 +127,12 @@ pub(crate) fn outgoing_request_send(
                 if let Some(response) = response.get() {
                     Poll::Ready(response.unwrap())
                 } else {
-                    state.cancel_token = Some(CancelOnDropToken::from(spin_executor::push_waker(
-                        response.subscribe(),
-                        context.waker().clone(),
-                    )));
+                    state.cancel_token = Some(CancelOnDropToken::from(
+                        spin_executor::push_waker_and_get_token(
+                            response.subscribe(),
+                            context.waker().clone(),
+                        ),
+                    ));
                     Poll::Pending
                 }
             }
@@ -170,11 +173,12 @@ pub fn incoming_body(
                 match stream.read(READ_SIZE) {
                     Ok(buffer) => {
                         if buffer.is_empty() {
-                            incoming.cancel_token =
-                                Some(CancelOnDropToken::from(spin_executor::push_waker(
+                            incoming.cancel_token = Some(CancelOnDropToken::from(
+                                spin_executor::push_waker_and_get_token(
                                     stream.subscribe(),
                                     context.waker().clone(),
-                                )));
+                                ),
+                            ));
                             Poll::Pending
                         } else {
                             Poll::Ready(Some(Ok(buffer)))

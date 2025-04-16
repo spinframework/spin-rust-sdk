@@ -81,7 +81,7 @@ wasmtime-wasi-http = "18.0.1"
 wit-component = "0.200.0"
 
 [workspace.package]
-version = "3.1.0"
+version = "3.1.1"
 authors = ["Fermyon Engineering <engineering@fermyon.com>"]
 edition = "2021"
 license = "Apache-2.0 WITH LLVM-exception"

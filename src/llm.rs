@@ -54,7 +54,7 @@ pub enum InferencingModel<'a> {
     Other(&'a str),
 }
 
-impl<'a> std::fmt::Display for InferencingModel<'a> {
+impl std::fmt::Display for InferencingModel<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
             InferencingModel::Llama2Chat => "llama2-chat",
@@ -100,7 +100,7 @@ pub enum EmbeddingModel<'a> {
     Other(&'a str),
 }
 
-impl<'a> std::fmt::Display for EmbeddingModel<'a> {
+impl std::fmt::Display for EmbeddingModel<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
             EmbeddingModel::AllMiniLmL6V2 => "all-minilm-l6-v2",
