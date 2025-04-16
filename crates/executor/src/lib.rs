@@ -25,8 +25,8 @@ type Wrapped = Arc<Mutex<Option<io::poll::Pollable>>>;
 
 static WAKERS: Mutex<Vec<(Wrapped, Waker)>> = Mutex::new(Vec::new());
 
-/// Handle to a Pollable pushed using `push_waker` which may be used to cancel
-/// and drop the Pollable.
+/// Handle to a Pollable registered using `push_waker_and_get_token` which may
+/// be used to cancel and drop the Pollable.
 pub struct CancelToken(Wrapped);
 
 impl CancelToken {
@@ -36,8 +36,8 @@ impl CancelToken {
     }
 }
 
-/// Handle to a Pollable pushed using `push_waker` which, when dropped, will
-/// cancel and drop the Pollable.
+/// Handle to a Pollable registered using `push_waker_and_get_token` which, when
+/// dropped, will cancel and drop the Pollable.
 pub struct CancelOnDropToken(Wrapped);
 
 impl From<CancelToken> for CancelOnDropToken {
@@ -52,16 +52,27 @@ impl Drop for CancelOnDropToken {
     }
 }
 
-/// Push a Pollable and Waker to WAKERS.
-pub fn push_waker(pollable: io::poll::Pollable, waker: Waker) -> CancelToken {
+/// Register a `Pollable` and `Waker` to be polled as part of the [`run`] event
+/// loop.
+pub fn push_waker(pollable: io::poll::Pollable, waker: Waker) {
+    _ = push_waker_and_get_token(pollable, waker);
+}
+
+/// Register a `Pollable` and `Waker` to be polled as part of the [`run`] event
+/// loop and retrieve a [`CancelToken`] to cancel the registration later, if
+/// desired.
+pub fn push_waker_and_get_token(pollable: io::poll::Pollable, waker: Waker) -> CancelToken {
     let wrapped = Arc::new(Mutex::new(Some(pollable)));
     WAKERS.lock().unwrap().push((wrapped.clone(), waker));
     CancelToken(wrapped)
 }
 
-/// Run the specified future to completion blocking until it yields a result.
+/// Run the specified future to completion, blocking until it yields a result.
 ///
-/// Based on an executor using `wasi::io/poll/poll-list`,
+/// This will alternate between polling the specified future and polling any
+/// `Pollable`s registered using [`push_waker`] or [`push_waker_and_get_token`]
+/// using `wasi::io/poll/poll-list`.  It will panic if the future returns
+/// `Poll::Pending` without having registered at least one `Pollable`.
 pub fn run<T>(future: impl Future<Output = T>) -> T {
     futures::pin_mut!(future);
     struct DummyWaker;
@@ -84,6 +95,8 @@ pub fn run<T>(future: impl Future<Output = T>) -> T {
                         pollable.map(|pollable| (wrapped, pollable, waker))
                     })
                     .collect::<Vec<_>>();
+
+                assert!(!wakers.is_empty());
 
                 let pollables = wakers
                     .iter()
