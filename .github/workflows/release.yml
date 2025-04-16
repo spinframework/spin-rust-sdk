@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       startsWith(github.ref, 'refs/tags/v') &&
-      github.repository_owner == 'fermyon'
+      github.repository_owner == 'spinframework'
     steps:
       - uses: actions/checkout@v2
 
