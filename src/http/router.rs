@@ -154,9 +154,42 @@ pub type Params = Captures<'static, 'static>;
 /// # fn handle_single_segment(req: Request, params: Params) -> anyhow::Result<Response> { todo!() }
 /// # fn handle_exact(req: Request, params: Params) -> anyhow::Result<Response> { todo!() }
 /// ```
+///
+/// Route based on the trailing segment of a Spin wildcard route, instead of on the full path
+///
+/// ```no_run
+/// // spin.toml
+/// //
+/// // [[trigger.http]]
+/// // route = "/shop/..."
+///
+/// // component
+/// # use spin_sdk::http::{IntoResponse, Params, Request, Response, Router};
+/// fn handle_route(req: Request) -> Response {
+///     let mut router = Router::suffix();
+///     router.any("/users/*", handle_users);
+///     router.any("/products/*", handle_products);
+///     router.handle(req)
+/// }
+///
+/// // '/shop/users/1' is routed to `handle_users`
+/// // '/shop/products/1' is routed to `handle_products`
+/// # fn handle_users(req: Request, params: Params) -> anyhow::Result<Response> { todo!() }
+/// # fn handle_products(req: Request, params: Params) -> anyhow::Result<Response> { todo!() }
+/// ```
 pub struct Router {
     methods_map: HashMap<Method, MethodRouter<Box<dyn Handler>>>,
     any_methods: MethodRouter<Box<dyn Handler>>,
+    route_on: RouteOn,
+}
+
+/// Describes what part of the path the Router will route on.
+enum RouteOn {
+    /// The router will route on the full path.
+    FullPath,
+    /// The router expects the component to be handling a route with a trailing wildcard
+    /// (e.g. `route = /shop/...`), and will route on the trailing segment.
+    Suffix,
 }
 
 impl Default for Router {
@@ -203,7 +236,16 @@ impl Router {
             Err(e) => return e.into_response(),
         };
         let method = request.method.clone();
-        let path = &request.path();
+        let path = match self.route_on {
+            RouteOn::FullPath => request.path(),
+            RouteOn::Suffix => match trailing_suffix(&request) {
+                Some(path) => path,
+                None => {
+                    eprintln!("Internal error: Router configured with suffix routing but trigger route has no trailing wildcard");
+                    return responses::internal_server_error();
+                }
+            },
+        };
         let RouteMatch { params, handler } = self.find(path, method);
         handler.handle(request, params).await
     }
@@ -516,11 +558,22 @@ impl Router {
         self.add_async(path, Method::Options, handler)
     }
 
-    /// Construct a new Router.
+    /// Construct a new Router that matches on the full path.
     pub fn new() -> Self {
         Router {
             methods_map: HashMap::default(),
             any_methods: MethodRouter::new(),
+            route_on: RouteOn::FullPath,
+        }
+    }
+
+    /// Construct a new Router that matches on the trailing wildcard
+    /// component of the route.
+    pub fn suffix() -> Self {
+        Router {
+            methods_map: HashMap::default(),
+            any_methods: MethodRouter::new(),
+            route_on: RouteOn::Suffix,
         }
     }
 }
@@ -531,6 +584,11 @@ async fn not_found(_req: Request, _params: Params) -> Response {
 
 async fn method_not_allowed(_req: Request, _params: Params) -> Response {
     responses::method_not_allowed()
+}
+
+fn trailing_suffix(req: &Request) -> Option<&str> {
+    req.header("spin-path-info")
+        .and_then(|path_info| path_info.as_str())
 }
 
 /// A macro to help with constructing a Router from a stream of tokens.
@@ -577,6 +635,12 @@ mod tests {
 
     fn make_request(method: Method, path: &str) -> Request {
         Request::new(method, path)
+    }
+
+    fn make_wildcard_request(method: Method, path: &str, trailing: &str) -> Request {
+        let mut req = Request::new(method, path);
+        req.set_header("spin-path-info", trailing);
+        req
     }
 
     fn echo_param(_req: Request, params: Params) -> Response {
@@ -662,6 +726,16 @@ mod tests {
         router.get("/:x/*", echo_param);
 
         let req = make_request(Method::Get, "/foo/bar");
+        let res = router.handle(req);
+        assert_eq!(res.body, "foo".to_owned().into_bytes());
+    }
+
+    #[test]
+    fn test_spin_trailing_wildcard() {
+        let mut router = Router::suffix();
+        router.get("/:x/*", echo_param);
+
+        let req = make_wildcard_request(Method::Get, "/base/baser/foo/bar", "/foo/bar");
         let res = router.handle(req);
         assert_eq!(res.body, "foo".to_owned().into_bytes());
     }
