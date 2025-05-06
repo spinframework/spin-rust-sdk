@@ -82,12 +82,12 @@ wit-component = "0.200.0"
 
 [workspace.package]
 version = "3.1.1"
-authors = ["Fermyon Engineering <engineering@fermyon.com>"]
+authors = ["Spin Framework Maintainers <cncf-spin-maintainers@lists.cncf.io>"]
 edition = "2021"
 license = "Apache-2.0 WITH LLVM-exception"
-repository = "https://github.com/fermyon/spin-rust-sdk"
+repository = "https://github.com/spinframework/spin-rust-sdk"
 rust-version = "1.78"
-homepage = "https://developer.fermyon.com/spin/v2/rust-components"
+homepage = "https://spinframework.dev/rust-components"
 
 [workspace.dependencies]
 wit-bindgen = "0.16.0"
