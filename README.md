@@ -2,9 +2,9 @@
 
 The Spin Rust SDK makes it easy to build Spin components in Rust.
 
-## Fermyon Developer Home
+## Spin documentation
 
-This `README` file provides a few examples, such as writing Spin HTTP components in Rust and making outbound HTTP requests. For comprehensive information, visit the official [Fermyon Developer Home](https://developer.fermyon.com/). This resource includes [a page on installing Spin](https://developer.fermyon.com/spin/v2/install#installing-spin), [a quickstart guide](https://developer.fermyon.com/spin/v2/quickstart), and [a language support overview page](https://developer.fermyon.com/spin/v2/language-support-overview). The latter lists all of Spin's features—including key-value storage, SQLite, MySQL, Redis, Serverless AI, etc.—and their implementation in specific languages such as Rust, TS/JS, Python, and TinyGo.
+This `README` file provides a few examples, such as writing Spin HTTP components in Rust and making outbound HTTP requests. For comprehensive information, visit the official [Spin Documentation website](https://spinframework.dev). This resource includes [a page on installing Spin](https://spinframework.dev/install#installing-spin), [a quickstart guide](https://spinframework.dev/quickstart), and [a language support overview page](https://spinframework.dev/language-support-overview). The latter lists all of Spin's features—including key-value storage, SQLite, MySQL, Redis, Serverless AI, etc.—and their implementation in specific languages such as Rust, TS/JS, Python, and TinyGo.
 
 ### Writing Spin HTTP Components in Rust
 
