@@ -1,3 +1,15 @@
+//! Sending and receiving HTTP requests.
+//!
+//! This module includes:
+//!
+//! * Common HTTP types used in sending and receiving.
+//! * The [`send`] function for making HTTP requests.
+//! * The [`Router`] type for routing received HTTP requests.
+//! * The [`conversions`] and [`responses`] modules to make common cases easier.
+//!
+//! For writing a component which handles HTTP requests, see the
+//! [`http_component`](super::http_component) macro.
+
 /// Traits for converting between the various types
 pub mod conversions;
 
@@ -1019,6 +1031,7 @@ impl ResponseOutparam {
 /// # Ok(())
 /// # }
 /// ```
+#[doc(alias = "fetch")]
 pub async fn send<I, O>(request: I) -> Result<O, SendError>
 where
     I: TryIntoOutgoingRequest,

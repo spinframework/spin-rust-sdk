@@ -591,7 +591,32 @@ fn trailing_suffix(req: &Request) -> Option<&str> {
         .and_then(|path_info| path_info.as_str())
 }
 
-/// A macro to help with constructing a Router from a stream of tokens.
+/// A macro to help with constructing a [`Router`] from method-pattern-handler triples.
+///
+/// # Examples
+///
+/// ```no_run
+/// # use spin_sdk::http_router;
+/// # use spin_sdk::http::{IntoResponse, Params, Request, Response, Router};
+/// fn handle_route(req: Request) -> Response {
+///     let router = http_router! {
+///         GET "/user" => list_users,
+///         POST "/user" => create_user,
+///         GET "/user/:id" => get_user,
+///         PUT "/user/:id" => update_user,
+///         DELETE "/user/:id" => delete_user,
+///         _ "/user" => method_not_allowed,
+///         _ "/user/:id" => method_not_allowed
+///     };
+///     router.handle(req)
+/// }
+/// # fn list_users(req: Request, params: Params) -> anyhow::Result<Response> { todo!() }
+/// # fn create_user(req: Request, params: Params) -> anyhow::Result<Response> { todo!() }
+/// # fn get_user(req: Request, params: Params) -> anyhow::Result<Response> { todo!() }
+/// # fn update_user(req: Request, params: Params) -> anyhow::Result<Response> { todo!() }
+/// # fn delete_user(req: Request, params: Params) -> anyhow::Result<Response> { todo!() }
+/// # fn method_not_allowed(req: Request, params: Params) -> anyhow::Result<Response> { todo!() }
+/// ```
 #[macro_export]
 macro_rules! http_router {
     ($($method:tt $path:literal => $h:expr),*) => {
