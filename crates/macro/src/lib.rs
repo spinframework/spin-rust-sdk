@@ -3,7 +3,27 @@ use quote::quote;
 
 const WIT_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/wit");
 
-/// Generates the entrypoint to a Spin Redis component written in Rust.
+/// The entrypoint to a Spin Redis component.
+///
+/// The component runs in response to messages on a Redis queue.
+///
+/// # Examples
+///
+/// A handler that logs the content of each message it receives.
+///
+/// ```ignore
+/// # use anyhow::Result;
+/// # use bytes::Bytes;
+/// # use spin_sdk::redis_component;
+/// # use std::str::from_utf8;
+/// #[redis_component]
+/// fn on_message(message: Bytes) -> Result<()> {
+///     println!("{}", from_utf8(&message)?);
+///     Ok(())
+/// }
+/// ```
+///
+/// See <https://spinframework.dev/redis-trigger> for more information.
 #[proc_macro_attribute]
 pub fn redis_component(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let func = syn::parse_macro_input!(item as syn::ItemFn);
@@ -35,7 +55,10 @@ pub fn redis_component(_attr: TokenStream, item: TokenStream) -> TokenStream {
         .into()
 }
 
-/// The entrypoint to a WASI HTTP component written in Rust.
+/// The entrypoint to an HTTP component.
+///
+/// The component runs in response to inbound HTTP requests that match the component's
+/// trigger.
 ///
 /// Functions annotated with this attribute can be of two forms:
 /// * Request/Response
@@ -85,6 +108,8 @@ pub fn redis_component(_attr: TokenStream, item: TokenStream) -> TokenStream {
 ///   // Your logic goes here
 /// }
 /// ```
+///
+/// See <https://spinframework.dev/http-trigger> for more information.
 #[proc_macro_attribute]
 pub fn http_component(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let func = syn::parse_macro_input!(item as syn::ItemFn);

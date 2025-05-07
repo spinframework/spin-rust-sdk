@@ -14,7 +14,6 @@ pub mod sqlite;
 /// Large Language Model (Serverless AI) APIs
 pub mod llm;
 
-/// Exports the procedural macros for writing handlers for Spin components.
 pub use spin_macro::*;
 
 #[doc(hidden)]
@@ -54,7 +53,6 @@ extern "C" fn __spin_sdk_language() {}
 #[export_name = concat!("spin-sdk-commit-", env!("SDK_COMMIT"))]
 extern "C" fn __spin_sdk_hash() {}
 
-/// Helpers for building Spin `wasi-http` components.
 pub mod http;
 
 #[allow(missing_docs)]
