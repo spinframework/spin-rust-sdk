@@ -26,7 +26,7 @@ pub use types::{
 use self::conversions::{TryFromIncomingResponse, TryIntoOutgoingRequest};
 use super::wit::wasi::http0_2_0::types;
 use futures::SinkExt;
-use spin_executor::bindings::wasi::io::streams::{self, StreamError};
+use wasi::io::streams::{self, StreamError};
 
 /// Represents an incoming HTTP request.
 ///

@@ -1,25 +1,9 @@
-use bindings::wasi::io;
 use std::future::Future;
 use std::mem;
 use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Wake, Waker};
-
-/// Module containing the generated WIT bindings.
-pub mod bindings {
-    wit_bindgen::generate!({
-        world: "imports",
-        path: "io.wit",
-    });
-}
-
-impl std::fmt::Display for io::streams::Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.to_debug_string())
-    }
-}
-
-impl std::error::Error for io::streams::Error {}
+use wasi::io;
 
 type Wrapped = Arc<Mutex<Option<io::poll::Pollable>>>;
 
