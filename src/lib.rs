@@ -27,9 +27,9 @@ pub mod wit {
         world: "platform",
         path: "./wit",
         with: {
-            "wasi:io/error@0.2.0": spin_executor::bindings::wasi::io::error,
-            "wasi:io/streams@0.2.0": spin_executor::bindings::wasi::io::streams,
-            "wasi:io/poll@0.2.0": spin_executor::bindings::wasi::io::poll,
+            "wasi:io/error@0.2.0": ::wasi::io::error,
+            "wasi:io/streams@0.2.0": ::wasi::io::streams,
+            "wasi:io/poll@0.2.0": ::wasi::io::poll,
         }
     });
     pub use fermyon::spin2_0_0 as v2;

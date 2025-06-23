@@ -32,6 +32,7 @@ bytes = "1"
 hyperium = { package = "http", version = "1.0.0" }
 serde_json = { version = "1.0.96", optional = true }
 serde = { version = "1.0.163", optional = true }
+wasi = { workspace = true }
 
 [features]
 default = ["export-sdk-language", "json"]
@@ -93,3 +94,5 @@ homepage = "https://spinframework.dev/rust-components"
 wit-bindgen = "0.16.0"
 futures = "0.3.28"
 once_cell = "1.18.0"
+# Pin to the last version that targeted WASI 0.2.0
+wasi = "=0.13.1"
