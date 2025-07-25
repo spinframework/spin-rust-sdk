@@ -159,19 +159,19 @@ pub fn http_component(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
             impl From<self::preamble::wasi::http::types::IncomingRequest> for ::spin_sdk::http::IncomingRequest {
                 fn from(req: self::preamble::wasi::http::types::IncomingRequest) -> Self {
-                    unsafe { Self::from_handle(req.into_handle()) }
+                    unsafe { Self::from_handle(req.take_handle()) }
                 }
             }
 
             impl From<::spin_sdk::http::OutgoingResponse> for self::preamble::wasi::http::types::OutgoingResponse {
                 fn from(resp: ::spin_sdk::http::OutgoingResponse) -> Self {
-                    unsafe { Self::from_handle(resp.into_handle()) }
+                    unsafe { Self::from_handle(resp.take_handle()) }
                 }
             }
 
             impl From<self::preamble::wasi::http::types::ResponseOutparam> for ::spin_sdk::http::ResponseOutparam {
                 fn from(resp: self::preamble::wasi::http::types::ResponseOutparam) -> Self {
-                    unsafe { Self::from_handle(resp.into_handle()) }
+                    unsafe { Self::from_handle(resp.take_handle()) }
                 }
             }
         }
@@ -187,10 +187,6 @@ enum Export {
 }
 
 fn preamble(export: Export) -> proc_macro2::TokenStream {
-    let export_decl = match export {
-        Export::WasiHttp => quote!("wasi:http/incoming-handler": Spin),
-        Export::Redis => quote!("fermyon:spin/inbound-redis": Spin),
-    };
     let world = match export {
         Export::WasiHttp => quote!("wasi-http-trigger"),
         Export::Redis => quote!("redis-trigger"),
@@ -201,10 +197,9 @@ fn preamble(export: Export) -> proc_macro2::TokenStream {
             world: #world,
             path: #WIT_PATH,
             runtime_path: "::spin_sdk::wit_bindgen::rt",
-            exports: {
-                #export_decl
-            }
+            generate_all,
         });
         pub struct Spin;
+        export!(Spin);
     }
 }

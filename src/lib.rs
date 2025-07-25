@@ -30,18 +30,12 @@ pub mod wit {
             "wasi:io/error@0.2.0": ::wasi::io::error,
             "wasi:io/streams@0.2.0": ::wasi::io::streams,
             "wasi:io/poll@0.2.0": ::wasi::io::poll,
-        }
+        },
+        generate_all,
     });
     pub use fermyon::spin2_0_0 as v2;
     pub use spin::postgres::postgres as pg3;
 }
-
-/// Needed by the export macro
-///
-/// See [this commit](https://github.com/bytecodealliance/wit-bindgen/pull/394/commits/9d2ea88f986f4a883ba243449e3a070cac18958e) for more info.
-#[cfg(target_arch = "wasm32")]
-#[doc(hidden)]
-pub use wit::__link_section;
 
 #[export_name = concat!("spin-sdk-version-", env!("SDK_VERSION"))]
 extern "C" fn __spin_sdk_version() {}

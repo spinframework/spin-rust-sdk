@@ -19,7 +19,7 @@ use {
         component::{Component, Linker, ResourceTable},
         Config, Engine, Store,
     },
-    wasmtime_wasi::preview2::{WasiCtx, WasiCtxBuilder, WasiView},
+    wasmtime_wasi::p2::{IoView, WasiCtx, WasiCtxBuilder, WasiView},
     wasmtime_wasi_http::{WasiHttpCtx, WasiHttpView},
     wit_component::ComponentEncoder,
 };
@@ -34,17 +34,15 @@ impl WasiHttpView for Ctx {
     fn ctx(&mut self) -> &mut WasiHttpCtx {
         &mut self.wasi_http
     }
-
-    fn table(&mut self) -> &mut ResourceTable {
-        &mut self.table
-    }
 }
 
 impl WasiView for Ctx {
     fn ctx(&mut self) -> &mut WasiCtx {
         &mut self.wasi
     }
+}
 
+impl IoView for Ctx {
     fn table(&mut self) -> &mut ResourceTable {
         &mut self.table
     }
@@ -91,8 +89,8 @@ fn engine() -> &'static Engine {
 fn store_and_linker() -> Result<(Store<Ctx>, Linker<Ctx>)> {
     let mut linker = Linker::new(engine());
 
-    wasmtime_wasi::preview2::command::add_to_linker(&mut linker)?;
-    wasmtime_wasi_http::proxy::add_only_http_to_linker(&mut linker)?;
+    wasmtime_wasi_http::add_only_http_to_linker_async(&mut linker)?;
+    wasmtime_wasi::p2::add_to_linker_async(&mut linker)?;
 
     Ok((
         Store::new(
@@ -100,7 +98,7 @@ fn store_and_linker() -> Result<(Store<Ctx>, Linker<Ctx>)> {
             Ctx {
                 table: ResourceTable::new(),
                 wasi: WasiCtxBuilder::new().inherit_stdio().build(),
-                wasi_http: WasiHttpCtx,
+                wasi_http: WasiHttpCtx::new(),
             },
         ),
         linker,
@@ -109,19 +107,26 @@ fn store_and_linker() -> Result<(Store<Ctx>, Linker<Ctx>)> {
 
 #[tokio::test]
 async fn simple_http() -> Result<()> {
+    use wasmtime_wasi_http::bindings::http::types::Scheme;
+
     let component = Component::new(engine(), build_component("simple_http").await?)?;
 
     let (mut store, linker) = store_and_linker()?;
 
-    let request = Request::get("/").body(BoxBody::new(Empty::new().map_err(|_| unreachable!())))?;
+    let request = Request::builder()
+        .method(hyper::Method::GET)
+        .uri("http://test.com:8080/")
+        .body(BoxBody::new(Empty::new().map_err(|_| unreachable!())))?;
 
-    let request = store.data_mut().new_incoming_request(request)?;
+    let request = store
+        .data_mut()
+        .new_incoming_request(Scheme::Http, request)?;
 
     let (response_tx, response_rx) = oneshot::channel();
     let response = store.data_mut().new_response_outparam(response_tx)?;
 
-    let (proxy, _) =
-        wasmtime_wasi_http::proxy::Proxy::instantiate_async(&mut store, &component, &linker)
+    let proxy =
+        wasmtime_wasi_http::bindings::Proxy::instantiate_async(&mut store, &component, &linker)
             .await?;
 
     let handle = task::spawn(async move {
@@ -164,7 +169,7 @@ async fn simple_redis() -> Result<()> {
 
     let (mut store, linker) = store_and_linker()?;
 
-    let (trigger, _) = RedisTrigger::instantiate_async(&mut store, &component, &linker).await?;
+    let trigger = RedisTrigger::instantiate_async(&mut store, &component, &linker).await?;
 
     trigger
         .fermyon_spin_inbound_redis()
