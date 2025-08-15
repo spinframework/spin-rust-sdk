@@ -21,6 +21,7 @@ anyhow = "1"
 async-trait = "0.1.74"
 chrono = "0.4.38"
 form_urlencoded = "1.0"
+rust_decimal = { version = "1.37.2", default-features = false }
 spin-executor = { version = "4.0.0", path = "crates/executor" }
 spin-macro = { version = "4.0.0", path = "crates/macro" }
 thiserror = "1.0.37"
@@ -33,6 +34,8 @@ hyperium = { package = "http", version = "1.0.0" }
 serde_json = { version = "1.0.96", optional = true }
 serde = { version = "1.0.163", optional = true }
 wasi = { workspace = true }
+uuid = "1.18.0"
+postgres_range = "0.11.1"
 
 [features]
 default = ["export-sdk-language", "json"]
