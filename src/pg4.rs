@@ -1,5 +1,8 @@
-//! Postgres relational database storage for Spin 3.3 and earlier. Applications that do not require
-//! this backward compatibility should use the [`pg4`](crate::pg4) module instead.
+// pg4 errors can be large, because they now include a breakdown of the PostgreSQL
+// error fields instead of just a string
+#![allow(clippy::result_large_err)]
+
+//! Postgres relational database storage.
 //!
 //! You can use the [`into()`](std::convert::Into) method to convert
 //! a Rust value into a [`ParameterValue`]. You can use the
@@ -22,6 +25,14 @@
 //! | `chrono::NaiveTime`     | time(tuple<u8, u8, u8, u32>)                  | TIME                         |
 //! | `chrono::NaiveDateTime` | datetime(tuple<s32, u8, u8, u8, u8, u8, u32>) | TIMESTAMP                    |
 //! | `chrono::Duration`      | timestamp(s64)                                | BIGINT                       |
+//! | `uuid::Uuid`            | uuid(string)                                  | UUID                         |
+//! | `serde_json::Value`     | jsonb(list\<u8\>)                             | JSONB                        |
+//! | `serde::De/Serialize    | jsonb(list\<u8\>)                             | JSONB                        |
+//! | `rust_decimal::Decimal` | decimal(string)                               | NUMERIC                      |
+//! | `postgres_range`        | range-int32(...), range-int64(...)            | INT4RANGE, INT8RANGE         |
+//! | lower/upper tuple       | range-decimal(...)                            | NUMERICRANGE                 |
+//! | `Vec<Option<...>>`      | array-int32(...), array-int64(...), array-str(...), array-decimal(...) | INT4[], INT8[], TEXT[], NUMERIC[] |
+//! | `pg4::Interval          | interval(interval)                            | INTERVAL                     |
 
 /// An open connection to a PostgreSQL database.
 ///
@@ -30,7 +41,7 @@
 /// Load a set of rows from a local PostgreSQL database, and iterate over them.
 ///
 /// ```no_run
-/// use spin_sdk::pg3::{Connection, Decode};
+/// use spin_sdk::pg4::{Connection, Decode};
 ///
 /// # fn main() -> anyhow::Result<()> {
 /// # let min_age = 0;
@@ -55,7 +66,7 @@
 /// contains a single column, with a single row.
 ///
 /// ```no_run
-/// use spin_sdk::pg3::{Connection, Decode};
+/// use spin_sdk::pg4::{Connection, Decode};
 ///
 /// # fn main() -> anyhow::Result<()> {
 /// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb")?;
@@ -75,7 +86,7 @@
 /// instead of the `query` method.
 ///
 /// ```no_run
-/// use spin_sdk::pg3::Connection;
+/// use spin_sdk::pg4::Connection;
 ///
 /// # fn main() -> anyhow::Result<()> {
 /// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb")?;
@@ -88,7 +99,7 @@
 /// # }
 /// ```
 #[doc(inline)]
-pub use super::wit::pg3::Connection;
+pub use super::wit::pg4::Connection;
 
 /// The result of a database query.
 ///
@@ -100,7 +111,7 @@ pub use super::wit::pg3::Connection;
 /// specific columns in the query.
 ///
 /// ```no_run
-/// use spin_sdk::pg3::{Connection, Decode};
+/// use spin_sdk::pg4::{Connection, Decode};
 ///
 /// # fn main() -> anyhow::Result<()> {
 /// # let min_age = 0;
@@ -120,10 +131,13 @@ pub use super::wit::pg3::Connection;
 /// # Ok(())
 /// # }
 /// ```
-pub use super::wit::pg3::RowSet;
+pub use super::wit::pg4::RowSet;
 
 #[doc(inline)]
-pub use super::wit::pg3::{Error as PgError, *};
+pub use super::wit::pg4::{Error as PgError, *};
+
+/// The PostgreSQL INTERVAL data type.
+pub use crate::pg4::Interval;
 
 use chrono::{Datelike, Timelike};
 
@@ -314,6 +328,140 @@ impl Decode for chrono::Duration {
     }
 }
 
+impl Decode for uuid::Uuid {
+    fn decode(value: &DbValue) -> Result<Self, Error> {
+        match value {
+            DbValue::Uuid(s) => uuid::Uuid::parse_str(s).map_err(|e| Error::Decode(e.to_string())),
+            _ => Err(Error::Decode(format_decode_err("UUID", value))),
+        }
+    }
+}
+
+impl Decode for serde_json::Value {
+    fn decode(value: &DbValue) -> Result<Self, Error> {
+        from_jsonb(value)
+    }
+}
+
+/// Convert a Postgres JSONB value to a `Deserialize`-able type.
+pub fn from_jsonb<'a, T: serde::Deserialize<'a>>(value: &'a DbValue) -> Result<T, Error> {
+    match value {
+        DbValue::Jsonb(j) => serde_json::from_slice(j).map_err(|e| Error::Decode(e.to_string())),
+        _ => Err(Error::Decode(format_decode_err("JSONB", value))),
+    }
+}
+
+impl Decode for rust_decimal::Decimal {
+    fn decode(value: &DbValue) -> Result<Self, Error> {
+        match value {
+            DbValue::Decimal(s) => {
+                rust_decimal::Decimal::from_str_exact(s).map_err(|e| Error::Decode(e.to_string()))
+            }
+            _ => Err(Error::Decode(format_decode_err("NUMERIC", value))),
+        }
+    }
+}
+
+fn bound_type_from_wit(kind: RangeBoundKind) -> postgres_range::BoundType {
+    match kind {
+        RangeBoundKind::Inclusive => postgres_range::BoundType::Inclusive,
+        RangeBoundKind::Exclusive => postgres_range::BoundType::Exclusive,
+    }
+}
+
+impl Decode for postgres_range::Range<i32> {
+    fn decode(value: &DbValue) -> Result<Self, Error> {
+        match value {
+            DbValue::RangeInt32((lbound, ubound)) => {
+                let lower = lbound.map(|(value, kind)| {
+                    postgres_range::RangeBound::new(value, bound_type_from_wit(kind))
+                });
+                let upper = ubound.map(|(value, kind)| {
+                    postgres_range::RangeBound::new(value, bound_type_from_wit(kind))
+                });
+                Ok(postgres_range::Range::new(lower, upper))
+            }
+            _ => Err(Error::Decode(format_decode_err("INT4RANGE", value))),
+        }
+    }
+}
+
+impl Decode for postgres_range::Range<i64> {
+    fn decode(value: &DbValue) -> Result<Self, Error> {
+        match value {
+            DbValue::RangeInt64((lbound, ubound)) => {
+                let lower = lbound.map(|(value, kind)| {
+                    postgres_range::RangeBound::new(value, bound_type_from_wit(kind))
+                });
+                let upper = ubound.map(|(value, kind)| {
+                    postgres_range::RangeBound::new(value, bound_type_from_wit(kind))
+                });
+                Ok(postgres_range::Range::new(lower, upper))
+            }
+            _ => Err(Error::Decode(format_decode_err("INT8RANGE", value))),
+        }
+    }
+}
+
+// TODO: NUMERICRANGE
+
+// TODO: can we return a slice here? It seems like it should be possible but
+// I wasn't able to get the lifetimes to work with the trait
+impl Decode for Vec<Option<i32>> {
+    fn decode(value: &DbValue) -> Result<Self, Error> {
+        match value {
+            DbValue::ArrayInt32(a) => Ok(a.to_vec()),
+            _ => Err(Error::Decode(format_decode_err("INT4[]", value))),
+        }
+    }
+}
+
+impl Decode for Vec<Option<i64>> {
+    fn decode(value: &DbValue) -> Result<Self, Error> {
+        match value {
+            DbValue::ArrayInt64(a) => Ok(a.to_vec()),
+            _ => Err(Error::Decode(format_decode_err("INT8[]", value))),
+        }
+    }
+}
+
+impl Decode for Vec<Option<String>> {
+    fn decode(value: &DbValue) -> Result<Self, Error> {
+        match value {
+            DbValue::ArrayStr(a) => Ok(a.to_vec()),
+            _ => Err(Error::Decode(format_decode_err("TEXT[]", value))),
+        }
+    }
+}
+
+fn map_decimal(s: &Option<String>) -> Result<Option<rust_decimal::Decimal>, Error> {
+    s.as_ref()
+        .map(|s| rust_decimal::Decimal::from_str_exact(s))
+        .transpose()
+        .map_err(|e| Error::Decode(e.to_string()))
+}
+
+impl Decode for Vec<Option<rust_decimal::Decimal>> {
+    fn decode(value: &DbValue) -> Result<Self, Error> {
+        match value {
+            DbValue::ArrayDecimal(a) => {
+                let decs = a.iter().map(map_decimal).collect::<Result<_, _>>()?;
+                Ok(decs)
+            }
+            _ => Err(Error::Decode(format_decode_err("NUMERIC[]", value))),
+        }
+    }
+}
+
+impl Decode for Interval {
+    fn decode(value: &DbValue) -> Result<Self, Error> {
+        match value {
+            DbValue::Interval(i) => Ok(*i),
+            _ => Err(Error::Decode(format_decode_err("INTERVAL", value))),
+        }
+    }
+}
+
 macro_rules! impl_parameter_value_conversions {
     ($($ty:ty => $id:ident),*) => {
         $(
@@ -335,7 +483,10 @@ impl_parameter_value_conversions! {
     f64 => Floating64,
     bool => Boolean,
     String => Str,
-    Vec<u8> => Binary
+    Vec<u8> => Binary,
+    Vec<Option<i32>> => ArrayInt32,
+    Vec<Option<i64>> => ArrayInt64,
+    Vec<Option<String>> => ArrayStr
 }
 
 impl From<chrono::NaiveDateTime> for ParameterValue {
@@ -372,6 +523,193 @@ impl From<chrono::NaiveDate> for ParameterValue {
 impl From<chrono::TimeDelta> for ParameterValue {
     fn from(v: chrono::TimeDelta) -> ParameterValue {
         ParameterValue::Timestamp(v.num_seconds())
+    }
+}
+
+impl From<uuid::Uuid> for ParameterValue {
+    fn from(v: uuid::Uuid) -> ParameterValue {
+        ParameterValue::Uuid(v.to_string())
+    }
+}
+
+impl TryFrom<serde_json::Value> for ParameterValue {
+    type Error = serde_json::Error;
+
+    fn try_from(v: serde_json::Value) -> Result<ParameterValue, Self::Error> {
+        jsonb(&v)
+    }
+}
+
+/// Converts a `Serialize` value to a Postgres JSONB SQL parameter.
+pub fn jsonb<T: serde::Serialize>(value: &T) -> Result<ParameterValue, serde_json::Error> {
+    let json = serde_json::to_vec(value)?;
+    Ok(ParameterValue::Jsonb(json))
+}
+
+impl From<rust_decimal::Decimal> for ParameterValue {
+    fn from(v: rust_decimal::Decimal) -> ParameterValue {
+        ParameterValue::Decimal(v.to_string())
+    }
+}
+
+// We cannot impl From<T: RangeBounds<...>> because Rust fears that some future
+// knave or rogue might one day add RangeBounds to NaiveDateTime. The best we can
+// do is therefore a helper function we can call from range Froms.
+#[allow(
+    clippy::type_complexity,
+    reason = "I sure hope 'blame Alex' works here too"
+)]
+fn range_bounds_to_wit<T, U>(
+    range: impl std::ops::RangeBounds<T>,
+    f: impl Fn(&T) -> U,
+) -> (Option<(U, RangeBoundKind)>, Option<(U, RangeBoundKind)>) {
+    (
+        range_bound_to_wit(range.start_bound(), &f),
+        range_bound_to_wit(range.end_bound(), &f),
+    )
+}
+
+fn range_bound_to_wit<T, U>(
+    bound: std::ops::Bound<&T>,
+    f: &dyn Fn(&T) -> U,
+) -> Option<(U, RangeBoundKind)> {
+    match bound {
+        std::ops::Bound::Included(v) => Some((f(v), RangeBoundKind::Inclusive)),
+        std::ops::Bound::Excluded(v) => Some((f(v), RangeBoundKind::Exclusive)),
+        std::ops::Bound::Unbounded => None,
+    }
+}
+
+fn pg_range_bound_to_wit<S: postgres_range::BoundSided, T: Copy>(
+    bound: &postgres_range::RangeBound<S, T>,
+) -> (T, RangeBoundKind) {
+    let kind = match &bound.type_ {
+        postgres_range::BoundType::Inclusive => RangeBoundKind::Inclusive,
+        postgres_range::BoundType::Exclusive => RangeBoundKind::Exclusive,
+    };
+    (bound.value, kind)
+}
+
+impl From<std::ops::Range<i32>> for ParameterValue {
+    fn from(v: std::ops::Range<i32>) -> ParameterValue {
+        ParameterValue::RangeInt32(range_bounds_to_wit(v, |n| *n))
+    }
+}
+
+impl From<std::ops::RangeInclusive<i32>> for ParameterValue {
+    fn from(v: std::ops::RangeInclusive<i32>) -> ParameterValue {
+        ParameterValue::RangeInt32(range_bounds_to_wit(v, |n| *n))
+    }
+}
+
+impl From<std::ops::RangeFrom<i32>> for ParameterValue {
+    fn from(v: std::ops::RangeFrom<i32>) -> ParameterValue {
+        ParameterValue::RangeInt32(range_bounds_to_wit(v, |n| *n))
+    }
+}
+
+impl From<std::ops::RangeTo<i32>> for ParameterValue {
+    fn from(v: std::ops::RangeTo<i32>) -> ParameterValue {
+        ParameterValue::RangeInt32(range_bounds_to_wit(v, |n| *n))
+    }
+}
+
+impl From<std::ops::RangeToInclusive<i32>> for ParameterValue {
+    fn from(v: std::ops::RangeToInclusive<i32>) -> ParameterValue {
+        ParameterValue::RangeInt32(range_bounds_to_wit(v, |n| *n))
+    }
+}
+
+impl From<postgres_range::Range<i32>> for ParameterValue {
+    fn from(v: postgres_range::Range<i32>) -> ParameterValue {
+        let lbound = v.lower().map(pg_range_bound_to_wit);
+        let ubound = v.upper().map(pg_range_bound_to_wit);
+        ParameterValue::RangeInt32((lbound, ubound))
+    }
+}
+
+impl From<std::ops::Range<i64>> for ParameterValue {
+    fn from(v: std::ops::Range<i64>) -> ParameterValue {
+        ParameterValue::RangeInt64(range_bounds_to_wit(v, |n| *n))
+    }
+}
+
+impl From<std::ops::RangeInclusive<i64>> for ParameterValue {
+    fn from(v: std::ops::RangeInclusive<i64>) -> ParameterValue {
+        ParameterValue::RangeInt64(range_bounds_to_wit(v, |n| *n))
+    }
+}
+
+impl From<std::ops::RangeFrom<i64>> for ParameterValue {
+    fn from(v: std::ops::RangeFrom<i64>) -> ParameterValue {
+        ParameterValue::RangeInt64(range_bounds_to_wit(v, |n| *n))
+    }
+}
+
+impl From<std::ops::RangeTo<i64>> for ParameterValue {
+    fn from(v: std::ops::RangeTo<i64>) -> ParameterValue {
+        ParameterValue::RangeInt64(range_bounds_to_wit(v, |n| *n))
+    }
+}
+
+impl From<std::ops::RangeToInclusive<i64>> for ParameterValue {
+    fn from(v: std::ops::RangeToInclusive<i64>) -> ParameterValue {
+        ParameterValue::RangeInt64(range_bounds_to_wit(v, |n| *n))
+    }
+}
+
+impl From<postgres_range::Range<i64>> for ParameterValue {
+    fn from(v: postgres_range::Range<i64>) -> ParameterValue {
+        let lbound = v.lower().map(pg_range_bound_to_wit);
+        let ubound = v.upper().map(pg_range_bound_to_wit);
+        ParameterValue::RangeInt64((lbound, ubound))
+    }
+}
+
+impl From<std::ops::Range<rust_decimal::Decimal>> for ParameterValue {
+    fn from(v: std::ops::Range<rust_decimal::Decimal>) -> ParameterValue {
+        ParameterValue::RangeDecimal(range_bounds_to_wit(v, |d| d.to_string()))
+    }
+}
+
+impl From<Vec<i32>> for ParameterValue {
+    fn from(v: Vec<i32>) -> ParameterValue {
+        ParameterValue::ArrayInt32(v.into_iter().map(Some).collect())
+    }
+}
+
+impl From<Vec<i64>> for ParameterValue {
+    fn from(v: Vec<i64>) -> ParameterValue {
+        ParameterValue::ArrayInt64(v.into_iter().map(Some).collect())
+    }
+}
+
+impl From<Vec<String>> for ParameterValue {
+    fn from(v: Vec<String>) -> ParameterValue {
+        ParameterValue::ArrayStr(v.into_iter().map(Some).collect())
+    }
+}
+
+impl From<Vec<Option<rust_decimal::Decimal>>> for ParameterValue {
+    fn from(v: Vec<Option<rust_decimal::Decimal>>) -> ParameterValue {
+        let strs = v
+            .into_iter()
+            .map(|optd| optd.map(|d| d.to_string()))
+            .collect();
+        ParameterValue::ArrayDecimal(strs)
+    }
+}
+
+impl From<Vec<rust_decimal::Decimal>> for ParameterValue {
+    fn from(v: Vec<rust_decimal::Decimal>) -> ParameterValue {
+        let strs = v.into_iter().map(|d| Some(d.to_string())).collect();
+        ParameterValue::ArrayDecimal(strs)
+    }
+}
+
+impl From<Interval> for ParameterValue {
+    fn from(v: Interval) -> ParameterValue {
+        ParameterValue::Interval(v)
     }
 }
 
