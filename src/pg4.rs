@@ -328,6 +328,7 @@ impl Decode for chrono::Duration {
     }
 }
 
+#[cfg(feature = "postgres4-types")]
 impl Decode for uuid::Uuid {
     fn decode(value: &DbValue) -> Result<Self, Error> {
         match value {
@@ -337,6 +338,7 @@ impl Decode for uuid::Uuid {
     }
 }
 
+#[cfg(feature = "json")]
 impl Decode for serde_json::Value {
     fn decode(value: &DbValue) -> Result<Self, Error> {
         from_jsonb(value)
@@ -344,6 +346,7 @@ impl Decode for serde_json::Value {
 }
 
 /// Convert a Postgres JSONB value to a `Deserialize`-able type.
+#[cfg(feature = "json")]
 pub fn from_jsonb<'a, T: serde::Deserialize<'a>>(value: &'a DbValue) -> Result<T, Error> {
     match value {
         DbValue::Jsonb(j) => serde_json::from_slice(j).map_err(|e| Error::Decode(e.to_string())),
@@ -351,6 +354,7 @@ pub fn from_jsonb<'a, T: serde::Deserialize<'a>>(value: &'a DbValue) -> Result<T
     }
 }
 
+#[cfg(feature = "postgres4-types")]
 impl Decode for rust_decimal::Decimal {
     fn decode(value: &DbValue) -> Result<Self, Error> {
         match value {
@@ -362,6 +366,7 @@ impl Decode for rust_decimal::Decimal {
     }
 }
 
+#[cfg(feature = "postgres4-types")]
 fn bound_type_from_wit(kind: RangeBoundKind) -> postgres_range::BoundType {
     match kind {
         RangeBoundKind::Inclusive => postgres_range::BoundType::Inclusive,
@@ -369,6 +374,7 @@ fn bound_type_from_wit(kind: RangeBoundKind) -> postgres_range::BoundType {
     }
 }
 
+#[cfg(feature = "postgres4-types")]
 impl Decode for postgres_range::Range<i32> {
     fn decode(value: &DbValue) -> Result<Self, Error> {
         match value {
@@ -386,6 +392,7 @@ impl Decode for postgres_range::Range<i32> {
     }
 }
 
+#[cfg(feature = "postgres4-types")]
 impl Decode for postgres_range::Range<i64> {
     fn decode(value: &DbValue) -> Result<Self, Error> {
         match value {
@@ -403,7 +410,41 @@ impl Decode for postgres_range::Range<i64> {
     }
 }
 
-// TODO: NUMERICRANGE
+// We can't use postgres_range::Range because rust_decimal::Decimal
+// is not Normalizable
+#[cfg(feature = "postgres4-types")]
+impl Decode
+    for (
+        Option<(rust_decimal::Decimal, RangeBoundKind)>,
+        Option<(rust_decimal::Decimal, RangeBoundKind)>,
+    )
+{
+    fn decode(value: &DbValue) -> Result<Self, Error> {
+        fn parse(
+            value: &str,
+            kind: RangeBoundKind,
+        ) -> Result<(rust_decimal::Decimal, RangeBoundKind), Error> {
+            let dec = rust_decimal::Decimal::from_str_exact(value)
+                .map_err(|e| Error::Decode(e.to_string()))?;
+            Ok((dec, kind))
+        }
+
+        match value {
+            DbValue::RangeDecimal((lbound, ubound)) => {
+                let lower = lbound
+                    .as_ref()
+                    .map(|(value, kind)| parse(value, *kind))
+                    .transpose()?;
+                let upper = ubound
+                    .as_ref()
+                    .map(|(value, kind)| parse(value, *kind))
+                    .transpose()?;
+                Ok((lower, upper))
+            }
+            _ => Err(Error::Decode(format_decode_err("NUMERICRANGE", value))),
+        }
+    }
+}
 
 // TODO: can we return a slice here? It seems like it should be possible but
 // I wasn't able to get the lifetimes to work with the trait
@@ -434,6 +475,7 @@ impl Decode for Vec<Option<String>> {
     }
 }
 
+#[cfg(feature = "postgres4-types")]
 fn map_decimal(s: &Option<String>) -> Result<Option<rust_decimal::Decimal>, Error> {
     s.as_ref()
         .map(|s| rust_decimal::Decimal::from_str_exact(s))
@@ -441,6 +483,7 @@ fn map_decimal(s: &Option<String>) -> Result<Option<rust_decimal::Decimal>, Erro
         .map_err(|e| Error::Decode(e.to_string()))
 }
 
+#[cfg(feature = "postgres4-types")]
 impl Decode for Vec<Option<rust_decimal::Decimal>> {
     fn decode(value: &DbValue) -> Result<Self, Error> {
         match value {
@@ -526,12 +569,14 @@ impl From<chrono::TimeDelta> for ParameterValue {
     }
 }
 
+#[cfg(feature = "postgres4-types")]
 impl From<uuid::Uuid> for ParameterValue {
     fn from(v: uuid::Uuid) -> ParameterValue {
         ParameterValue::Uuid(v.to_string())
     }
 }
 
+#[cfg(feature = "json")]
 impl TryFrom<serde_json::Value> for ParameterValue {
     type Error = serde_json::Error;
 
@@ -541,11 +586,13 @@ impl TryFrom<serde_json::Value> for ParameterValue {
 }
 
 /// Converts a `Serialize` value to a Postgres JSONB SQL parameter.
+#[cfg(feature = "json")]
 pub fn jsonb<T: serde::Serialize>(value: &T) -> Result<ParameterValue, serde_json::Error> {
     let json = serde_json::to_vec(value)?;
     Ok(ParameterValue::Jsonb(json))
 }
 
+#[cfg(feature = "postgres4-types")]
 impl From<rust_decimal::Decimal> for ParameterValue {
     fn from(v: rust_decimal::Decimal) -> ParameterValue {
         ParameterValue::Decimal(v.to_string())
@@ -580,6 +627,7 @@ fn range_bound_to_wit<T, U>(
     }
 }
 
+#[cfg(feature = "postgres4-types")]
 fn pg_range_bound_to_wit<S: postgres_range::BoundSided, T: Copy>(
     bound: &postgres_range::RangeBound<S, T>,
 ) -> (T, RangeBoundKind) {
@@ -620,6 +668,7 @@ impl From<std::ops::RangeToInclusive<i32>> for ParameterValue {
     }
 }
 
+#[cfg(feature = "postgres4-types")]
 impl From<postgres_range::Range<i32>> for ParameterValue {
     fn from(v: postgres_range::Range<i32>) -> ParameterValue {
         let lbound = v.lower().map(pg_range_bound_to_wit);
@@ -658,6 +707,7 @@ impl From<std::ops::RangeToInclusive<i64>> for ParameterValue {
     }
 }
 
+#[cfg(feature = "postgres4-types")]
 impl From<postgres_range::Range<i64>> for ParameterValue {
     fn from(v: postgres_range::Range<i64>) -> ParameterValue {
         let lbound = v.lower().map(pg_range_bound_to_wit);
@@ -666,6 +716,7 @@ impl From<postgres_range::Range<i64>> for ParameterValue {
     }
 }
 
+#[cfg(feature = "postgres4-types")]
 impl From<std::ops::Range<rust_decimal::Decimal>> for ParameterValue {
     fn from(v: std::ops::Range<rust_decimal::Decimal>) -> ParameterValue {
         ParameterValue::RangeDecimal(range_bounds_to_wit(v, |d| d.to_string()))
@@ -690,6 +741,7 @@ impl From<Vec<String>> for ParameterValue {
     }
 }
 
+#[cfg(feature = "postgres4-types")]
 impl From<Vec<Option<rust_decimal::Decimal>>> for ParameterValue {
     fn from(v: Vec<Option<rust_decimal::Decimal>>) -> ParameterValue {
         let strs = v
@@ -700,6 +752,7 @@ impl From<Vec<Option<rust_decimal::Decimal>>> for ParameterValue {
     }
 }
 
+#[cfg(feature = "postgres4-types")]
 impl From<Vec<rust_decimal::Decimal>> for ParameterValue {
     fn from(v: Vec<rust_decimal::Decimal>) -> ParameterValue {
         let strs = v.into_iter().map(|d| Some(d.to_string())).collect();
@@ -858,5 +911,119 @@ mod tests {
         assert!(Option::<chrono::Duration>::decode(&DbValue::DbNull)
             .unwrap()
             .is_none());
+    }
+
+    #[test]
+    #[cfg(feature = "postgres4-types")]
+    fn uuid() {
+        let uuid_str = "12341234-1234-1234-1234-123412341234";
+        assert_eq!(
+            uuid::Uuid::try_parse(uuid_str).unwrap(),
+            uuid::Uuid::decode(&DbValue::Uuid(uuid_str.to_owned())).unwrap(),
+        );
+        assert!(Option::<uuid::Uuid>::decode(&DbValue::DbNull)
+            .unwrap()
+            .is_none());
+    }
+
+    #[derive(Debug, serde::Deserialize, PartialEq)]
+    struct JsonTest {
+        hello: String,
+    }
+
+    #[test]
+    #[cfg(feature = "json")]
+    fn jsonb() {
+        let json_val = serde_json::json!({
+            "hello": "world"
+        });
+        let dbval = DbValue::Jsonb(r#"{"hello":"world"}"#.into());
+
+        assert_eq!(json_val, serde_json::Value::decode(&dbval).unwrap(),);
+
+        let json_struct = JsonTest {
+            hello: "world".to_owned(),
+        };
+        assert_eq!(json_struct, from_jsonb(&dbval).unwrap());
+    }
+
+    #[test]
+    #[cfg(feature = "postgres4-types")]
+    fn ranges() {
+        let i32_range = postgres_range::Range::<i32>::decode(&DbValue::RangeInt32((
+            Some((45, RangeBoundKind::Inclusive)),
+            Some((89, RangeBoundKind::Exclusive)),
+        )))
+        .unwrap();
+        assert_eq!(45, i32_range.lower().unwrap().value);
+        assert_eq!(
+            postgres_range::BoundType::Inclusive,
+            i32_range.lower().unwrap().type_
+        );
+        assert_eq!(89, i32_range.upper().unwrap().value);
+        assert_eq!(
+            postgres_range::BoundType::Exclusive,
+            i32_range.upper().unwrap().type_
+        );
+
+        let i32_range_from = postgres_range::Range::<i32>::decode(&DbValue::RangeInt32((
+            Some((45, RangeBoundKind::Inclusive)),
+            None,
+        )))
+        .unwrap();
+        assert!(i32_range_from.upper().is_none());
+
+        let i64_range = postgres_range::Range::<i64>::decode(&DbValue::RangeInt64((
+            Some((4567456745674567, RangeBoundKind::Inclusive)),
+            Some((890189018901890189, RangeBoundKind::Exclusive)),
+        )))
+        .unwrap();
+        assert_eq!(4567456745674567, i64_range.lower().unwrap().value);
+        assert_eq!(890189018901890189, i64_range.upper().unwrap().value);
+
+        #[allow(clippy::type_complexity)]
+        let (dec_lbound, dec_ubound): (
+            Option<(rust_decimal::Decimal, RangeBoundKind)>,
+            Option<(rust_decimal::Decimal, RangeBoundKind)>,
+        ) = Decode::decode(&DbValue::RangeDecimal((
+            Some(("4567.8901".to_owned(), RangeBoundKind::Inclusive)),
+            Some(("8901.2345678901".to_owned(), RangeBoundKind::Exclusive)),
+        )))
+        .unwrap();
+        assert_eq!(
+            rust_decimal::Decimal::from_i128_with_scale(45678901, 4),
+            dec_lbound.unwrap().0
+        );
+        assert_eq!(
+            rust_decimal::Decimal::from_i128_with_scale(89012345678901, 10),
+            dec_ubound.unwrap().0
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "postgres4-types")]
+    fn arrays() {
+        let v32 = vec![Some(123), None, Some(456)];
+        let i32_arr = Vec::<Option<i32>>::decode(&DbValue::ArrayInt32(v32.clone())).unwrap();
+        assert_eq!(v32, i32_arr);
+
+        let v64 = vec![Some(123), None, Some(456)];
+        let i64_arr = Vec::<Option<i64>>::decode(&DbValue::ArrayInt64(v64.clone())).unwrap();
+        assert_eq!(v64, i64_arr);
+
+        let vdec = vec![Some("1.23".to_owned()), None];
+        let dec_arr =
+            Vec::<Option<rust_decimal::Decimal>>::decode(&DbValue::ArrayDecimal(vdec)).unwrap();
+        assert_eq!(
+            vec![
+                Some(rust_decimal::Decimal::from_i128_with_scale(123, 2)),
+                None
+            ],
+            dec_arr
+        );
+
+        let vstr = vec![Some("alice".to_owned()), None, Some("bob".to_owned())];
+        let str_arr = Vec::<Option<String>>::decode(&DbValue::ArrayStr(vstr.clone())).unwrap();
+        assert_eq!(vstr, str_arr);
     }
 }
