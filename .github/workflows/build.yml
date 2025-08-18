@@ -35,6 +35,18 @@ jobs:
           cargo fmt --all -- --check
           cargo clippy --workspace --all-targets -- -D warnings
         
+      - name: Check with no-default-features
+        shell: bash
+        run: cargo check --no-default-features
+
+      - name: Check with `json` feature only
+        shell: bash
+        run: cargo check --no-default-features --features json
+
+      - name: Check with `postgres4-types` feature only
+        shell: bash
+        run: cargo check --no-default-features --features postgres4-types
+
       - name: Test
         shell: bash
         run: cargo test --workspace
