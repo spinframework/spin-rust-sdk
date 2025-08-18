@@ -59,6 +59,7 @@ members = [
   "examples/mysql",
   "examples/postgres",
   "examples/postgres-v3",
+  "examples/postgres-v4",
   "examples/redis-outbound",
   "examples/mqtt-outbound",
   "examples/variables",
