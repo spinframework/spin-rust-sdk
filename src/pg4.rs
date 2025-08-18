@@ -27,12 +27,12 @@
 //! | `chrono::Duration`      | timestamp(s64)                                | BIGINT                       |
 //! | `uuid::Uuid`            | uuid(string)                                  | UUID                         |
 //! | `serde_json::Value`     | jsonb(list\<u8\>)                             | JSONB                        |
-//! | `serde::De/Serialize    | jsonb(list\<u8\>)                             | JSONB                        |
+//! | `serde::De/Serialize`   | jsonb(list\<u8\>)                             | JSONB                        |
 //! | `rust_decimal::Decimal` | decimal(string)                               | NUMERIC                      |
 //! | `postgres_range`        | range-int32(...), range-int64(...)            | INT4RANGE, INT8RANGE         |
 //! | lower/upper tuple       | range-decimal(...)                            | NUMERICRANGE                 |
 //! | `Vec<Option<...>>`      | array-int32(...), array-int64(...), array-str(...), array-decimal(...) | INT4[], INT8[], TEXT[], NUMERIC[] |
-//! | `pg4::Interval          | interval(interval)                            | INTERVAL                     |
+//! | `pg4::Interval`         | interval(interval)                            | INTERVAL                     |
 
 /// An open connection to a PostgreSQL database.
 ///

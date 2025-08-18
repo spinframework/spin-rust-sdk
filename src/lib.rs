@@ -9,7 +9,7 @@ mod test;
 pub mod key_value;
 
 /// SQLite storage for Spin 2 and earlier. Applications that do not require
-/// this backward compatibility should use the [`sqlite3`](crate::sqlite3) module instead.
+/// this backward compatibility should use the [`sqlite3`] module instead.
 pub mod sqlite;
 /// SQLite storage.
 pub mod sqlite3;
