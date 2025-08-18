@@ -5,9 +5,11 @@ use async_trait::async_trait;
 use wasi::io::streams;
 
 use super::{
-    Headers, IncomingRequest, IncomingResponse, Json, JsonBodyError, Method, OutgoingRequest,
-    OutgoingResponse, RequestBuilder,
+    Headers, IncomingRequest, IncomingResponse, Method, OutgoingRequest, OutgoingResponse,
+    RequestBuilder,
 };
+#[cfg(feature = "json")]
+use super::{Json, JsonBodyError};
 
 use super::{responses, NonUtf8BodyError, Request, Response};
 

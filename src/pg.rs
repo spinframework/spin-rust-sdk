@@ -1,5 +1,5 @@
-//! Spin 2 Postgres relational database storage. Applications that do not require
-//! Spin 2 support should use the [`pg3`](crate::pg3) module instead.
+//! Postgres relational database storage for Spin 2 and earlier. Applications that do not require
+//! this backward compatibility should use the [`pg4`](crate::pg4) module instead.
 //!
 //! Conversions between Rust, WIT and **Postgres** types.
 //!

@@ -8,8 +8,11 @@ mod test;
 /// Key/Value storage.
 pub mod key_value;
 
-/// SQLite storage.
+/// SQLite storage for Spin 2 and earlier. Applications that do not require
+/// this backward compatibility should use the [`sqlite3`] module instead.
 pub mod sqlite;
+/// SQLite storage.
+pub mod sqlite3;
 
 /// Large Language Model (Serverless AI) APIs
 pub mod llm;
@@ -34,7 +37,9 @@ pub mod wit {
         generate_all,
     });
     pub use fermyon::spin2_0_0 as v2;
-    pub use spin::postgres::postgres as pg3;
+    pub use spin::postgres3_0_0::postgres as pg3;
+    pub use spin::postgres4_0_0::postgres as pg4;
+    pub use spin::sqlite::sqlite as sqlite3;
 }
 
 #[export_name = concat!("spin-sdk-version-", env!("SDK_VERSION"))]
@@ -56,8 +61,8 @@ pub mod mqtt;
 pub mod redis;
 
 pub mod pg;
-
 pub mod pg3;
+pub mod pg4;
 
 pub mod mysql;
 

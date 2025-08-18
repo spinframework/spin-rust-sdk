@@ -1,4 +1,5 @@
-//! Postgres relational database storage.
+//! Postgres relational database storage for Spin 3.3 and earlier. Applications that do not require
+//! this backward compatibility should use the [`pg4`](crate::pg4) module instead.
 //!
 //! You can use the [`into()`](std::convert::Into) method to convert
 //! a Rust value into a [`ParameterValue`]. You can use the
