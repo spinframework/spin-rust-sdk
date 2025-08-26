@@ -2120,7 +2120,7 @@ dependencies = [
 
 [[package]]
 name = "spin-executor"
-version = "4.0.0"
+version = "5.0.0"
 dependencies = [
  "futures",
  "once_cell",
@@ -2129,7 +2129,7 @@ dependencies = [
 
 [[package]]
 name = "spin-macro"
-version = "4.0.0"
+version = "5.0.0"
 dependencies = [
  "anyhow",
  "bytes",
@@ -2140,7 +2140,7 @@ dependencies = [
 
 [[package]]
 name = "spin-sdk"
-version = "4.0.0"
+version = "5.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
