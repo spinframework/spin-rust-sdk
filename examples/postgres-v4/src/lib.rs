@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use anyhow::Result;
 use http::{Request, Response};
-use spin_sdk::{http_component, pg3, pg3::Decode};
+use spin_sdk::{http_component, pg4};
 
 // The environment variable set in `spin.toml` that points to the
 // address of the Pg server that the component will write to
@@ -10,7 +10,7 @@ const DB_URL_ENV: &str = "DB_URL";
 #[http_component]
 fn process(req: Request<()>) -> Result<Response<String>> {
     let address = std::env::var(DB_URL_ENV)?;
-    let conn = pg3::Connection::open(&address)?;
+    let conn = pg4::Connection::open(&address)?;
 
     let year_header = req
         .headers()
@@ -31,10 +31,9 @@ fn process(req: Request<()>) -> Result<Response<String>> {
         "it was anarchy".to_owned()
     } else {
         let ruler_names = rulers
-            .rows
-            .into_iter()
-            .map(|r| Decode::decode(&r[0]))
-            .collect::<Result<Vec<String>, _>>()?;
+            .rows()
+            .map(|r| r.get::<String>("name").unwrap())
+            .collect::<Vec<_>>();
         ruler_names.join(" and ")
     };
 

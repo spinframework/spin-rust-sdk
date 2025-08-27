@@ -133,6 +133,67 @@ pub use super::wit::pg4::Connection;
 /// ```
 pub use super::wit::pg4::RowSet;
 
+impl RowSet {
+    /// Get all the rows for this query result
+    pub fn rows(&self) -> impl Iterator<Item = Row<'_>> {
+        self.rows.iter().map(|r| Row {
+            columns: self.columns.as_slice(),
+            result: r,
+        })
+    }
+}
+
+/// A database row result.
+///
+/// There are two representations of a SQLite row in the SDK.  This type is useful for
+/// addressing elements by column name, and is obtained from the [RowSet::rows()] function.
+/// The [DbValue] vector representation is obtained from the [field@RowSet::rows] field, and provides
+/// index-based lookup or low-level access to row values via a vector.
+pub struct Row<'a> {
+    columns: &'a [super::wit::pg4::Column],
+    result: &'a [DbValue],
+}
+
+impl Row<'_> {
+    /// Get a value by its column name. The value is converted to the target type as per the
+    /// conversion table shown in the module documentation.
+    ///
+    /// This function returns None for both no such column _and_ failed conversion. You should use
+    /// it only if you do not need to address errors (that is, if you know that conversion should
+    /// never fail). If your code does not know the type in advance, use the raw [field@RowSet::rows] vector
+    /// instead of the `Row` wrapper to access the underlying [DbValue] enum: this will allow you to
+    /// determine the type and process it accordingly.
+    ///
+    /// Additionally, this function performs a name lookup each time it is called. If you are iterating
+    /// over a large number of rows, it's more efficient to use column indexes, either calculated or
+    /// statically known from the column order in the SQL.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use spin_sdk::pg4::{Connection, DbValue};
+    ///
+    /// # fn main() -> anyhow::Result<()> {
+    /// # let user_id = 0;
+    /// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb")?;
+    /// let query_result = db.query(
+    ///     "SELECT * FROM users WHERE id = $1",
+    ///     &[user_id.into()]
+    /// )?;
+    /// let user_row = query_result.rows().next().unwrap();
+    ///
+    /// let name = user_row.get::<String>("name").unwrap();
+    /// let age = user_row.get::<i16>("age").unwrap();
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get<T: Decode>(&self, column: &str) -> Option<T> {
+        let i = self.columns.iter().position(|c| c.name == column)?;
+        let db_value = self.result.get(i)?;
+        Decode::decode(db_value).ok()
+    }
+}
+
 #[doc(inline)]
 pub use super::wit::pg4::{Error as PgError, *};
 
