@@ -43,3 +43,17 @@ jobs:
         run: cargo publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+  dispatch-rust-sdk-release:
+    name: Dispatch rust-sdk-release event to spinframework/spin
+    needs: crates
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'spinframework' && startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.SPIN_REPO_PAT }}
+          repository: spinframework/spin
+          event-type: rust-sdk-release
+          client-payload: '{"version": "${{ github.ref_name }}"}'
