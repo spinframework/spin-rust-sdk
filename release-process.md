@@ -25,3 +25,5 @@ To cut a new release, you will need to do the following:
 6. Pushing the tag upstream will trigger the [release action](https://github.com/spinframework/spin-rust-sdk/actions/workflows/release.yml) which publishes the crates in this workspace to `crates.io` and dispatches an `rust-sdk-release` event to the `spinframework/spin` repository. This event will trigger an action that updates the rust template's sdk dependency.
 
 7. If applicable, create PR(s) or coordinate [documentation](https://github.com/spinframework/spin-docs) needs, e.g. for new features or updated functionality.
+
+8. Create a PR to update the SDK version of [examples in the Spin repo](https://github.com/spinframework/spin/examples/) that use the Rust SDK as appropriate.
