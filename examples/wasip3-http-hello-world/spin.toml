@@ -1,0 +1,20 @@
+#:schema https://schemas.spinframework.dev/spin/manifest-v2/latest.json
+
+spin_manifest_version = 2
+
+[application]
+authors = ["Fermyon Engineering <engineering@fermyon.com>"]
+description = "An application that returns hello."
+name = "hello-world"
+version = "1.0.0"
+
+[[trigger.http]]
+route = "/hello"
+component = "hello"
+
+[component.hello]
+source = "../../target/wasm32-wasip1/release/wasip3_hello_world.wasm"
+description = "A component that returns hello."
+[component.hello.build]
+command = "cargo build --target wasm32-wasip1 --release"
+watch = ["src/**/*.rs", "Cargo.toml"]

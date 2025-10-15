@@ -1,0 +1,20 @@
+#:schema https://schemas.spinframework.dev/spin/manifest-v2/latest.json
+
+spin_manifest_version = 2
+
+[application]
+name = "axum-router"
+version = "0.1.0"
+authors = ["Fermyon Engineering <engineering@fermyon.com>"]
+description = "An example application using axum"
+
+[[trigger.http]]
+route = "/..."
+component = "axum-router"
+
+[component.axum-router]
+source = "../../target/wasm32-wasip1/release/axum_router.wasm"
+allowed_outbound_hosts = []
+[component.axum-router.build]
+command = "cargo build --target wasm32-wasip1 --release"
+watch = ["src/**/*.rs", "Cargo.toml"]

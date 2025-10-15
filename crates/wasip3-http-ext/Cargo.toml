@@ -1,0 +1,17 @@
+[package]
+name = "wasip3-http-ext"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage.workspace = true
+
+[dependencies]
+bytes = { workspace = true }
+http-body = { workspace = true }
+http-body-util = { workspace = true }
+hyperium = { workspace = true }
+wasip3 = { workspace = true }
+thiserror = { workspace = true }

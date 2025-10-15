@@ -1,0 +1,13 @@
+[package]
+name = "axum-router"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+axum = { version = "0.8.1", default-features = false, features = ["json", "macros"] }
+serde = { version = "1.0.163", features = ["derive"] }
+spin-sdk = { path = "../.." }
+tower-service = "0.3.3"

@@ -17,7 +17,7 @@ The Spin Rust SDK makes it easy to build Spin components in Rust.
 name = "spin_sdk"
 
 [dependencies]
-anyhow = "1"
+anyhow = { workspace = true }
 async-trait = "0.1.74"
 chrono = "0.4.38"
 form_urlencoded = "1.0"
@@ -25,14 +25,16 @@ postgres_range = { version = "0.11.1", optional = true }
 rust_decimal = { version = "1.37.2", default-features = false, optional = true }
 spin-executor = { version = "5.0.0", path = "crates/executor" }
 spin-macro = { version = "5.0.0", path = "crates/macro" }
-thiserror = "1.0.37"
+spin-wasip3-http = { version = "5.0.0", path = "crates/spin-wasip3-http" }
+spin-wasip3-http-macro = { version = "5.0.0", path = "crates/spin-wasip3-http-macro" }
+thiserror = { workspace = true }
 uuid = { version = "1.18.0", optional = true }
 wit-bindgen = { workspace = true }
 routefinder = "0.5.3"
 once_cell = { workspace = true }
 futures = { workspace = true }
-bytes = "1"
-hyperium = { package = "http", version = "1.0.0" }
+bytes = { workspace = true }
+hyperium = { workspace = true }
 serde_json = { version = "1.0.96", optional = true }
 serde = { version = "1.0.163", optional = true }
 wasi = { workspace = true }
@@ -65,6 +67,9 @@ members = [
   "examples/variables",
   "examples/wasi-http-streaming-outgoing-body",
   "examples/wasi-http-streaming-file",
+  "examples/wasip3-http-axum-router",
+  "examples/wasip3-http-hello-world",
+  "examples/wasip3-http-send-request",
   "test-cases/simple-http",
   "test-cases/simple-redis",
   "crates/*",
@@ -92,12 +97,19 @@ authors = ["Spin Framework Maintainers <cncf-spin-maintainers@lists.cncf.io>"]
 edition = "2021"
 license = "Apache-2.0 WITH LLVM-exception"
 repository = "https://github.com/spinframework/spin-rust-sdk"
-rust-version = "1.78"
+rust-version = "1.86"
 homepage = "https://spinframework.dev/rust-components"
 
 [workspace.dependencies]
+anyhow = "1"
+hyperium = { package = "http", version = "1.3.1" }
+http-body = "1.0.1"
+http-body-util = "0.1.3"
+bytes = "1.10.1"
 wit-bindgen = "0.43.0"
 futures = "0.3.28"
 once_cell = "1.18.0"
+thiserror = "2.0.17"
 # Pin to the last version that targeted WASI 0.2.0
 wasi = "=0.13.1"
+wasip3 = "0.2.0"

@@ -1,0 +1,23 @@
+#:schema https://schemas.spinframework.dev/spin/manifest-v2/latest.json
+
+spin_manifest_version = 2
+
+[application]
+authors = ["Fermyon Engineering <engineering@fermyon.com>"]
+description = "An application that sends an HTTP request"
+name = "send-request"
+version = "1.0.0"
+
+[[trigger.http]]
+route = "/..."
+component = "send"
+
+[component.send]
+source = "../../target/wasm32-wasip1/release/send_request.wasm"
+description = "A component that sends a request."
+allowed_outbound_hosts = [
+    "https://bytecodealliance.org",
+]
+[component.send.build]
+command = "cargo build --target wasm32-wasip1 --release"
+watch = ["src/**/*.rs", "Cargo.toml"]
