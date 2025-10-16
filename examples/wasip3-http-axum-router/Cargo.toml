@@ -9,5 +9,5 @@ crate-type = ["cdylib"]
 [dependencies]
 axum = { version = "0.8.1", default-features = false, features = ["json", "macros"] }
 serde = { version = "1.0.163", features = ["derive"] }
-spin-sdk = { path = "../.." }
+spin-sdk = { path = "../..", features = ["wasip3-unstable"] }
 tower-service = "0.3.3"

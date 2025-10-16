@@ -10,4 +10,4 @@ crate-type = ["cdylib"]
 anyhow = "1"
 axum = { version = "0.8.1", default-features = false, features = ["macros"] }
 http = "1.3.1"
-spin-sdk = { path = "../.." }
+spin-sdk = { path = "../..", features = ["wasip3-unstable"] }

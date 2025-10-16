@@ -13,8 +13,8 @@ route = "/..."
 component = "axum-router"
 
 [component.axum-router]
-source = "../../target/wasm32-wasip1/release/axum_router.wasm"
+source = "../../target/wasm32-wasip2/release/axum_router.wasm"
 allowed_outbound_hosts = []
 [component.axum-router.build]
-command = "cargo build --target wasm32-wasip1 --release"
+command = "cargo build --target wasm32-wasip2 --release"
 watch = ["src/**/*.rs", "Cargo.toml"]

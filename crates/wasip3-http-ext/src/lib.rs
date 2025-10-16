@@ -5,7 +5,6 @@ pub mod body_writer;
 use bytes::Bytes;
 use helpers::{fields_to_header_map, get_content_length, to_internal_error_code};
 use http_body::SizeHint;
-use http_body_util::{BodyExt, BodyStream};
 use hyperium as http;
 use std::{
     pin::Pin,
@@ -16,6 +15,8 @@ use wasip3::{
     wit_bindgen::{self, StreamResult},
     wit_future,
 };
+
+pub use wasip3;
 
 const READ_FRAME_SIZE: usize = 16 * 1024;
 
@@ -98,16 +99,6 @@ impl<T: IncomingMessage> IncomingBody<T> {
             content_length,
         })
     }
-
-    pub async fn stream(self) -> BodyStream<Self> {
-        BodyStream::new(self)
-    }
-
-    pub async fn bytes(self) -> Result<Bytes, ErrorCode> {
-        self.collect().await.map(|c| c.to_bytes())
-    }
-
-    // TODO: pub fn take_future() -> result
 
     pub fn take_unstarted(&mut self) -> Option<T> {
         match self.state {

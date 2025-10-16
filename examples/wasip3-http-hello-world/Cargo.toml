@@ -7,4 +7,4 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-spin-sdk = { path = "../.." }
+spin-sdk = { path = "../..", features = ["wasip3-unstable"] }

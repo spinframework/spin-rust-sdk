@@ -1,9 +1,9 @@
-//! Experimental Rust SDK for wasip3 http.
+//! Experimental Rust SDK for WASIp3 http.
 
 #![deny(missing_docs)]
 
 #[doc(hidden)]
-pub use wasip3;
+pub use wasip3_http_ext::wasip3;
 
 use hyperium as http;
 use std::any::Any;
@@ -22,105 +22,7 @@ use wasip3_http_ext::{IncomingRequestBody, IncomingResponseBody};
 /// instead of writing out `Result<T, Error>` explicitly.
 pub type Result<T, E = Error> = ::std::result::Result<T, E>;
 
-/// An inbound HTTP request carrying an [`wasip3_http_ext::IncomingRequestBody`].
-///
-/// This type alias specializes [`http::Request`] with the crate’s
-/// [`wasip3_http_ext::IncomingRequestBody`] type, representing a request received
-/// from the WASI HTTP runtime or an external client.
-///
-/// # See also
-/// - [`wasip3_http_ext::IncomingRequestBody`]: The body type for inbound HTTP requests.
-/// - [`http::Request`]: The standard HTTP request type from the `http` crate.
-pub type IncomingRequest = http::Request<IncomingRequestBody>;
-
-/// An inbound HTTP response carrying an [`wasip3_http_ext::IncomingResponseBody`].
-///
-/// This type alias specializes [`http::Response`] with the crate’s
-/// [`wasip3_http_ext::IncomingResponseBody`] type, representing a response received
-/// from the WASI HTTP runtime or a remote endpoint.
-///
-/// # See also
-/// - [`wasip3_http_ext::IncomingResponseBody`]: The body type for inbound HTTP responses.
-/// - [`http::Response`]: The standard HTTP response type from the `http` crate.
-pub type IncomingResponse = http::Response<IncomingResponseBody>;
-
 type HttpResult<T> = Result<T, types::ErrorCode>;
-
-/// Sends an HTTP request and returns the corresponding [`wasip3::http::types::Response`].
-///
-/// This function converts the provided value into a [`wasip3::http::types::Request`] using the
-/// [`IntoRequest`] trait, dispatches it to the WASI HTTP handler, and awaits
-/// the resulting response. It provides a convenient high-level interface for
-/// issuing HTTP requests within a WASI environment.
-pub async fn send(request: impl IntoRequest) -> HttpResult<IncomingResponse> {
-    let request = request.into_request()?;
-    let response = wasip3::http::handler::handle(request).await?;
-    IncomingResponse::from_response(response)
-}
-
-/// A trait for any type that can be converted into a [`wasip3::http::types::Request`].
-///
-/// This trait provides a unified interface for adapting user-defined request
-/// types into the lower-level [`wasip3::http::types::Request`] format used by
-/// the WASI HTTP subsystem.  
-///
-/// Implementing `IntoRequest` allows custom builders or wrapper types to
-/// interoperate seamlessly with APIs that expect standardized WASI HTTP
-/// request objects.
-///
-/// # See also
-/// - [`FromRequest`]: The inverse conversion trait.
-pub trait IntoRequest {
-    /// Converts `self` into a [`wasip3::http::types::Request`].
-    fn into_request(self) -> HttpResult<wasip3::http::types::Request>;
-}
-
-/// A trait for any type that can be converted into a [`wasip3::http::types::Response`].
-///
-/// This trait provides a unified interface for adapting user-defined response
-/// types into the lower-level [`wasip3::http::types::Response`] format used by
-/// the WASI HTTP subsystem.  
-///
-/// Implementing `IntoResponse` enables ergonomic conversion from domain-level
-/// response types or builders into standardized WASI HTTP responses.
-///
-/// # See also
-/// - [`FromResponse`]: The inverse conversion trait.
-pub trait IntoResponse {
-    /// Converts `self` into a [`wasip3::http::types::Response`].
-    fn into_response(self) -> HttpResult<wasip3::http::types::Response>;
-}
-
-/// A trait for constructing a value from a [`wasip3::http::types::Request`].
-///
-/// This is the inverse of [`IntoRequest`], allowing higher-level request
-/// types to be built from standardized WASI HTTP requests—for example,
-/// to parse structured payloads, extract query parameters, or perform
-/// request validation.
-///
-/// # See also
-/// - [`IntoRequest`]: Converts a type into a [`wasip3::http::types::Request`].
-pub trait FromRequest {
-    /// Attempts to construct `Self` from a [`wasip3::http::types::Request`].
-    fn from_request(req: wasip3::http::types::Request) -> HttpResult<Self>
-    where
-        Self: Sized;
-}
-
-/// A trait for constructing a value from a [`wasip3::http::types::Response`].
-///
-/// This is the inverse of [`IntoResponse`], allowing higher-level response
-/// types to be derived from standardized WASI HTTP responses—for example,
-/// to deserialize JSON payloads or map responses to domain-specific types.
-///
-/// # See also
-/// - [`IntoResponse`]: Converts a type into a [`wasip3::http::types::Response`].
-pub trait FromResponse {
-    /// Attempts to construct `Self` from a [`wasip3::http::types::Response`].
-    fn from_response(response: wasip3::http::types::Response) -> HttpResult<Self>
-    where
-        Self: Sized;
-}
 
 /// The error type used for HTTP operations within the WASI environment.
 ///
@@ -229,6 +131,157 @@ impl<Ok: IntoResponse, Err: Into<Error>> IntoResponse for Result<Ok, Err> {
             },
         }
     }
+}
+
+/// Sends an HTTP request and returns the corresponding [`wasip3::http::types::Response`].
+///
+/// This function converts the provided value into a [`wasip3::http::types::Request`] using the
+/// [`IntoRequest`] trait, dispatches it to the WASI HTTP handler, and awaits
+/// the resulting response. It provides a convenient high-level interface for
+/// issuing HTTP requests within a WASI environment.
+pub async fn send(request: impl IntoRequest) -> HttpResult<Response> {
+    let request = request.into_request()?;
+    let response = wasip3::http::handler::handle(request).await?;
+    Response::from_response(response)
+}
+
+/// A type alias for an HTTP request with a customizable body type.
+///
+/// This is a convenience wrapper around [`http::Request`], parameterized
+/// by the body type `T`. By default, it uses [`IncomingRequestBody`],
+/// which represents the standard incoming body used by this runtime.
+///
+/// # Type Parameters
+///
+/// * `T` — The request body type. Defaults to [`IncomingRequestBody`].
+///
+/// # See also
+/// - [`wasip3_http_ext::IncomingRequestBody`]: The body type for inbound HTTP requests.
+/// - [`http::Request`]: The standard HTTP request type from the `http` crate.
+pub type Request<T = IncomingRequestBody> = http::Request<T>;
+
+/// A type alias for an HTTP response with a customizable body type.
+///
+/// This is a convenience wrapper around [`http::Response`], parameterized
+/// by the body type `T`. By default, it uses [`IncomingResponseBody`],
+/// which represents the standard incoming body type used by this runtime.
+///
+/// # Type Parameters
+///
+/// * `T` — The response body type. Defaults to [`IncomingResponseBody`].
+///
+/// # See also
+/// - [`wasip3_http_ext::IncomingResponseBody`]: The body type for inbound HTTP responses.
+/// - [`http::Response`]: The standard HTTP response type from the `http` crate.
+pub type Response<T = IncomingResponseBody> = http::Response<T>;
+
+/// A body type representing an empty payload.
+///
+/// This is a convenience alias for [`http_body_util::Empty<bytes::Bytes>`],
+/// used when constructing HTTP requests or responses with no body.
+///
+/// # Examples
+///
+/// ```ignore
+/// use spin_wasip3_http::EmptyBody;
+///
+/// let empty = EmptyBody::new();
+/// let response = http::Response::builder()
+///     .status(204)
+///     .body(empty)
+///     .unwrap();
+/// ```
+pub type EmptyBody = http_body_util::Empty<bytes::Bytes>;
+
+/// A body type representing a complete, in-memory payload.
+///
+/// This is a convenience alias for [`http_body_util::Full<T>`], used when the
+/// entire body is already available as a single value of type `T`.
+///
+/// It is typically used for sending small or pre-buffered request or response
+/// bodies without the need for streaming.
+///
+/// # Type Parameters
+///
+/// * `T` — The data type of the full body, such as [`bytes::Bytes`] or [`String`].
+///
+/// # Examples
+///
+/// ```ignore
+/// use spin_wasip3_http::FullBody;
+/// use bytes::Bytes;
+///
+/// let body = FullBody::new(Bytes::from("hello"));
+/// let request = http::Request::builder()
+///     .method("POST")
+///     .uri("https://example.com")
+///     .body(body)
+///     .unwrap();
+/// ```
+pub type FullBody<T> = http_body_util::Full<T>;
+
+/// A trait for any type that can be converted into a [`wasip3::http::types::Request`].
+///
+/// This trait provides a unified interface for adapting user-defined request
+/// types into the lower-level [`wasip3::http::types::Request`] format used by
+/// the WASI HTTP subsystem.  
+///
+/// Implementing `IntoRequest` allows custom builders or wrapper types to
+/// interoperate seamlessly with APIs that expect standardized WASI HTTP
+/// request objects.
+///
+/// # See also
+/// - [`FromRequest`]: The inverse conversion trait.
+pub trait IntoRequest {
+    /// Converts `self` into a [`wasip3::http::types::Request`].
+    fn into_request(self) -> HttpResult<wasip3::http::types::Request>;
+}
+
+/// A trait for any type that can be converted into a [`wasip3::http::types::Response`].
+///
+/// This trait provides a unified interface for adapting user-defined response
+/// types into the lower-level [`wasip3::http::types::Response`] format used by
+/// the WASI HTTP subsystem.  
+///
+/// Implementing `IntoResponse` enables ergonomic conversion from domain-level
+/// response types or builders into standardized WASI HTTP responses.
+///
+/// # See also
+/// - [`FromResponse`]: The inverse conversion trait.
+pub trait IntoResponse {
+    /// Converts `self` into a [`wasip3::http::types::Response`].
+    fn into_response(self) -> HttpResult<wasip3::http::types::Response>;
+}
+
+/// A trait for constructing a value from a [`wasip3::http::types::Request`].
+///
+/// This is the inverse of [`IntoRequest`], allowing higher-level request
+/// types to be built from standardized WASI HTTP requests—for example,
+/// to parse structured payloads, extract query parameters, or perform
+/// request validation.
+///
+/// # See also
+/// - [`IntoRequest`]: Converts a type into a [`wasip3::http::types::Request`].
+pub trait FromRequest {
+    /// Attempts to construct `Self` from a [`wasip3::http::types::Request`].
+    fn from_request(req: wasip3::http::types::Request) -> HttpResult<Self>
+    where
+        Self: Sized;
+}
+
+/// A trait for constructing a value from a [`wasip3::http::types::Response`].
+///
+/// This is the inverse of [`IntoResponse`], allowing higher-level response
+/// types to be derived from standardized WASI HTTP responses—for example,
+/// to deserialize JSON payloads or map responses to domain-specific types.
+///
+/// # See also
+/// - [`IntoResponse`]: Converts a type into a [`wasip3::http::types::Response`].
+pub trait FromResponse {
+    /// Attempts to construct `Self` from a [`wasip3::http::types::Response`].
+    fn from_response(response: wasip3::http::types::Response) -> HttpResult<Self>
+    where
+        Self: Sized;
 }
 
 impl<T> IntoRequest for http::Request<T>
@@ -389,6 +442,8 @@ where
         let (response, _future_result) =
             types::Response::new(headers, Some(body_rx), body_result_rx);
 
+        _ = response.set_status_code(self.status().as_u16());
+
         wit_bindgen::spawn(async move {
             let mut body = std::pin::pin!(self.into_body());
             _ = body_writer.forward_http_body(&mut body).await;
@@ -413,5 +468,59 @@ impl FromResponse for IncomingResponseBody {
         Self: Sized,
     {
         Self::new(response)
+    }
+}
+
+/// Helpers for consuming an [`IncomingBody`].
+///
+/// This module provides extension traits and utilities for working with
+/// [`IncomingBody`] instances, such as streaming or collecting the entire
+/// body into memory.
+///
+/// These helpers make it easier to transform low-level streaming body types
+/// into higher-level forms (e.g., [`Bytes`]) for simplified data handling.
+pub mod body {
+    use bytes::Bytes;
+    use http_body_util::{BodyDataStream, BodyExt};
+    use wasip3_http_ext::wasip3::http::types::ErrorCode;
+    use wasip3_http_ext::{IncomingBody, IncomingMessage};
+
+    /// Extension trait providing convenient methods for consuming an [`IncomingBody`].
+    ///
+    /// This trait defines common patterns for handling HTTP body data in
+    /// asynchronous contexts. It allows converting the body into a stream
+    /// or fully collecting it into memory as a [`Bytes`] buffer.
+    #[allow(async_fn_in_trait)]
+    pub trait IncomingBodyExt {
+        /// Convert this [`IncomingBody`] into a [`BodyDataStream`].
+        ///
+        /// This method enables iteration over the body’s data chunks as they
+        /// arrive, without collecting them all into memory at once. It is
+        /// suitable for processing large or streaming payloads efficiently.
+        fn stream(self) -> BodyDataStream<Self>
+        where
+            Self: Sized;
+
+        /// Consume this [`IncomingBody`] and collect it into a single [`Bytes`] buffer.
+        ///
+        /// This method reads the entire body asynchronously and returns the
+        /// concatenated contents. It is best suited for small or bounded-size
+        /// payloads where holding all data in memory is acceptable.
+        async fn bytes(self) -> Result<Bytes, ErrorCode>;
+    }
+
+    impl<T: IncomingMessage> IncomingBodyExt for IncomingBody<T> {
+        /// Convert this [`IncomingBody`] into a [`BodyDataStream`].
+        fn stream(self) -> BodyDataStream<Self>
+        where
+            Self: Sized,
+        {
+            BodyDataStream::new(self)
+        }
+
+        /// Collect the [`IncomingBody`] into a single [`Bytes`] buffer.
+        async fn bytes(self) -> Result<Bytes, ErrorCode> {
+            self.collect().await.map(|c| c.to_bytes())
+        }
     }
 }

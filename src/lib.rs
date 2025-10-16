@@ -19,12 +19,13 @@ pub mod llm;
 
 pub use spin_macro::*;
 
-/// WasiP3 HTTP APIs and helpers
+/// WASIp3 HTTP APIs and helpers
+#[cfg(feature = "wasip3-unstable")]
 pub mod http_wasip3 {
-    /// Re-exports the helpers types for converting between WasiP3 HTTP types and
+    /// Re-exports the helpers types for converting between WASIp3 HTTP types and
     /// Rust ecosystem HTTP types.
     pub use spin_wasip3_http::*;
-    /// Re-exports the macro to enable WasiP3 HTTP handlers
+    /// Re-exports the macro to enable WASIp3 HTTP handlers
     pub use spin_wasip3_http_macro::*;
 }
 

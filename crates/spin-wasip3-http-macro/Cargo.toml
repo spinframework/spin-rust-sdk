@@ -8,7 +8,7 @@ repository.workspace = true
 rust-version.workspace = true
 homepage.workspace = true
 description = """
-Rust procedural macros for Spin and associated WIT files
+Rust procedural macros for Spin and WASIp3
 """
 
 [lib]

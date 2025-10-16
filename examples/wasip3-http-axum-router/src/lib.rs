@@ -4,12 +4,12 @@ use axum::{
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
-use spin_sdk::http_wasip3::{http_component, IncomingRequest, IntoResponse};
+use spin_sdk::http_wasip3::{http_component, IntoResponse, Request};
 use tower_service::Service;
 
 /// Sends a request to a URL.
 #[http_component]
-async fn handler(req: IncomingRequest) -> impl IntoResponse {
+async fn handler(req: Request) -> impl IntoResponse {
     Router::new()
         .route("/", get(root))
         .route("/users", post(create_user))

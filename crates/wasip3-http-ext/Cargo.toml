@@ -11,7 +11,6 @@ homepage.workspace = true
 [dependencies]
 bytes = { workspace = true }
 http-body = { workspace = true }
-http-body-util = { workspace = true }
 hyperium = { workspace = true }
-wasip3 = { workspace = true }
+wasip3 = "0.2.0"
 thiserror = { workspace = true }

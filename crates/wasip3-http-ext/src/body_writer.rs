@@ -1,8 +1,7 @@
-use std::fmt::Debug;
-
-use http_body::Frame;
-use http_body_util::BodyExt as _;
+use http_body::{Body as _, Frame};
 use hyperium::HeaderMap;
+use std::future::poll_fn;
+use std::{fmt::Debug, pin};
 use wasip3::{
     http::types::{ErrorCode, HeaderError, Trailers},
     wit_bindgen::{FutureReader, FutureWriter, StreamReader, StreamWriter},
@@ -75,15 +74,18 @@ impl BodyWriter {
     /// trailers) is returned.
     ///
     /// If there is an error it is written to to the result future.
-    pub async fn forward_http_body<T>(mut self, body: &mut T) -> Result<u64, Error>
+    pub async fn forward_http_body<T>(mut self, mut body: &mut T) -> Result<u64, Error>
     where
         T: http_body::Body + Unpin,
         T::Data: Into<Vec<u8>>,
         T::Error: Into<BoxError>,
     {
         let mut total_written = 0;
+
         loop {
-            match body.frame().await {
+            let frame = poll_fn(|cx| pin::Pin::new(&mut body).poll_frame(cx)).await;
+
+            match frame {
                 Some(Ok(frame)) => {
                     let written = self.process_http_body_frame(frame).await?;
                     total_written += written as u64;

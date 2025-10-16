@@ -13,11 +13,11 @@ route = "/..."
 component = "send"
 
 [component.send]
-source = "../../target/wasm32-wasip1/release/send_request.wasm"
+source = "../../target/wasm32-wasip2/release/send_request.wasm"
 description = "A component that sends a request."
 allowed_outbound_hosts = [
     "https://bytecodealliance.org",
 ]
 [component.send.build]
-command = "cargo build --target wasm32-wasip1 --release"
+command = "cargo build --target wasm32-wasip2 --release"
 watch = ["src/**/*.rs", "Cargo.toml"]
