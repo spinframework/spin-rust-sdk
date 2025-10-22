@@ -14,4 +14,4 @@ bytes = { workspace = true }
 http-body = { workspace = true }
 http-body-util = { workspace = true }
 hyperium = { workspace = true }
-wasip3-http-ext = { version = "5.0.0", path = "../wasip3-http-ext" }
+wasip3 = { version = "0.2.1", features = ["http-compat"] }

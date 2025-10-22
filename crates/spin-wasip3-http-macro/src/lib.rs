@@ -22,6 +22,17 @@ use quote::quote;
 ///
 /// If the function is not asynchronous, the macro emits a compile-time error.
 ///
+/// # Example
+///
+/// ```ignore
+/// use spin_sdk::http_wasip3::{http_component, Request, IntoResponse};
+///
+/// #[http_component]
+/// async fn my_handler(request: Request) -> impl IntoResponse {
+///   // Your logic goes here
+/// }
+/// ```
+///
 /// # Generated Code
 ///
 /// The macro expands into a module containing a `Spin` struct that implements the

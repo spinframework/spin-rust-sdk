@@ -2306,7 +2306,7 @@ dependencies = [
  "http 1.3.1",
  "http-body 1.0.1",
  "http-body-util",
- "wasip3-http-ext",
+ "wasip3",
 ]
 
 [[package]]
@@ -2819,10 +2819,14 @@ dependencies = [
 
 [[package]]
 name = "wasip3"
-version = "0.2.0+wasi-0.3.0-rc-2025-09-16"
+version = "0.2.1+wasi-0.3.0-rc-2025-09-16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a33c5ffefc208bc11080d0e6a44e1807cbbd3fc67dafd20078fffb4598421e33"
+checksum = "cbb2796323e2357ae2d4ba2b781a0392b533f40a5b9f534eef49b23e54186d64"
 dependencies = [
+ "bytes",
+ "http 1.3.1",
+ "http-body 1.0.1",
+ "thiserror 2.0.17",
  "wit-bindgen 0.46.0",
 ]
 
@@ -2831,17 +2835,6 @@ name = "wasip3-hello-world"
 version = "0.1.0"
 dependencies = [
  "spin-sdk",
-]
-
-[[package]]
-name = "wasip3-http-ext"
-version = "5.0.0"
-dependencies = [
- "bytes",
- "http 1.3.1",
- "http-body 1.0.1",
- "thiserror 2.0.17",
- "wasip3",
 ]
 
 [[package]]

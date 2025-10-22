@@ -3,18 +3,18 @@
 #![deny(missing_docs)]
 
 #[doc(hidden)]
-pub use wasip3_http_ext::wasip3;
+pub use wasip3;
 
 use hyperium as http;
 use std::any::Any;
-use wasip3::{http::types, wit_bindgen};
-use wasip3_http_ext::body_writer::BodyWriter;
-use wasip3_http_ext::helpers::{
-    header_map_to_wasi, method_from_wasi, method_to_wasi, scheme_from_wasi, scheme_to_wasi,
-    to_internal_error_code,
+pub use wasip3::http_compat::{Request, Response};
+use wasip3::{
+    http::types,
+    http_compat::{
+        http_from_wasi_request, http_from_wasi_response, http_into_wasi_request,
+        http_into_wasi_response,
+    },
 };
-use wasip3_http_ext::RequestOptionsExtension;
-use wasip3_http_ext::{IncomingRequestBody, IncomingResponseBody};
 
 /// A alias for [`std::result::Result`] that uses [`Error`] as the default error type.
 ///
@@ -31,20 +31,8 @@ type HttpResult<T> = Result<T, types::ErrorCode>;
 /// WASI-level error codes, dynamic runtime failures, or full HTTP responses
 /// returned as error results.
 ///
-/// # Variants
-///
-/// - [`Error::ErrorCode`]: Wraps a low-level [`wasip3::http::types::ErrorCode`]
-///   reported by the WASI HTTP runtime (e.g. connection errors, protocol errors).
-///
-/// - [`Error::Other`]: Represents an arbitrary dynamic error implementing
-///   [`std::error::Error`]. This allows integration with external libraries or
-///   application-specific failure types.
-///
-/// - [`Error::Response`]: Contains a full [`wasip3::http::types::Response`]
-///   representing an HTTP-level error (for example, a `4xx` or `5xx` response
-///   that should be treated as an error condition).
-///
 /// # See also
+/// - [`http::Error`]: Error type originating from the [`http`] crate.
 /// - [`wasip3::http::types::ErrorCode`]: Standard WASI HTTP error codes.
 /// - [`wasip3::http::types::Response`]: Used when an error represents an HTTP response body.
 #[derive(Debug)]
@@ -54,11 +42,17 @@ pub enum Error {
     /// Wraps [`wasip3::http::types::ErrorCode`] to represent
     /// transport-level or protocol-level failures.
     ErrorCode(wasip3::http::types::ErrorCode),
+    /// An error originating from the [`http`] crate.
+    ///
+    /// Covers errors encountered during the construction,
+    /// parsing, or validation of [`http`] types (e.g. invalid headers,
+    /// malformed URIs, or protocol violations).
+    HttpError(http::Error),
     /// A dynamic application or library error.
     ///
     /// Used for any runtime error that implements [`std::error::Error`],
     /// allowing flexibility for different error sources.
-    Other(Box<dyn ::std::error::Error + Send + Sync>),
+    Other(Box<dyn std::error::Error + Send + Sync>),
     /// An HTTP response treated as an error.
     ///
     /// Contains a full [`wasip3::http::types::Response`], such as
@@ -71,10 +65,11 @@ impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::ErrorCode(e) => write!(f, "{e}"),
+            Error::HttpError(e) => write!(f, "{e}"),
             Error::Other(e) => write!(f, "{e}"),
-            Error::Response(e) => match http::StatusCode::from_u16(e.get_status_code()) {
+            Error::Response(resp) => match http::StatusCode::from_u16(resp.get_status_code()) {
                 Ok(status) => write!(f, "{status}"),
-                Err(e) => write!(f, "{e}"),
+                Err(_) => write!(f, "invalid status code {}", resp.get_status_code()),
             },
         }
     }
@@ -83,8 +78,8 @@ impl std::fmt::Display for Error {
 impl std::error::Error for Error {}
 
 impl From<http::Error> for Error {
-    fn from(_err: http::Error) -> Error {
-        todo!("map to specific error codes")
+    fn from(err: http::Error) -> Error {
+        Error::HttpError(err)
     }
 }
 
@@ -125,6 +120,15 @@ impl<Ok: IntoResponse, Err: Into<Error>> IntoResponse for Result<Ok, Err> {
             Err(err) => match err.into() {
                 Error::ErrorCode(code) => Err(code),
                 Error::Response(resp) => Ok(resp),
+                Error::HttpError(err) => match err {
+                    err if err.is::<http::method::InvalidMethod>() => {
+                        Err(types::ErrorCode::HttpRequestMethodInvalid)
+                    }
+                    err if err.is::<http::uri::InvalidUri>() => {
+                        Err(types::ErrorCode::HttpRequestUriInvalid)
+                    }
+                    err => Err(types::ErrorCode::InternalError(Some(err.to_string()))),
+                },
                 Error::Other(other) => {
                     Err(types::ErrorCode::InternalError(Some(other.to_string())))
                 }
@@ -144,36 +148,6 @@ pub async fn send(request: impl IntoRequest) -> HttpResult<Response> {
     let response = wasip3::http::handler::handle(request).await?;
     Response::from_response(response)
 }
-
-/// A type alias for an HTTP request with a customizable body type.
-///
-/// This is a convenience wrapper around [`http::Request`], parameterized
-/// by the body type `T`. By default, it uses [`IncomingRequestBody`],
-/// which represents the standard incoming body used by this runtime.
-///
-/// # Type Parameters
-///
-/// * `T` — The request body type. Defaults to [`IncomingRequestBody`].
-///
-/// # See also
-/// - [`wasip3_http_ext::IncomingRequestBody`]: The body type for inbound HTTP requests.
-/// - [`http::Request`]: The standard HTTP request type from the `http` crate.
-pub type Request<T = IncomingRequestBody> = http::Request<T>;
-
-/// A type alias for an HTTP response with a customizable body type.
-///
-/// This is a convenience wrapper around [`http::Response`], parameterized
-/// by the body type `T`. By default, it uses [`IncomingResponseBody`],
-/// which represents the standard incoming body type used by this runtime.
-///
-/// # Type Parameters
-///
-/// * `T` — The response body type. Defaults to [`IncomingResponseBody`].
-///
-/// # See also
-/// - [`wasip3_http_ext::IncomingResponseBody`]: The body type for inbound HTTP responses.
-/// - [`http::Response`]: The standard HTTP response type from the `http` crate.
-pub type Response<T = IncomingResponseBody> = http::Response<T>;
 
 /// A body type representing an empty payload.
 ///
@@ -201,10 +175,6 @@ pub type EmptyBody = http_body_util::Empty<bytes::Bytes>;
 /// It is typically used for sending small or pre-buffered request or response
 /// bodies without the need for streaming.
 ///
-/// # Type Parameters
-///
-/// * `T` — The data type of the full body, such as [`bytes::Bytes`] or [`String`].
-///
 /// # Examples
 ///
 /// ```ignore
@@ -219,6 +189,34 @@ pub type EmptyBody = http_body_util::Empty<bytes::Bytes>;
 ///     .unwrap();
 /// ```
 pub type FullBody<T> = http_body_util::Full<T>;
+
+/// A trait for constructing a value from a [`wasip3::http::types::Request`].
+///
+/// This is the inverse of [`IntoRequest`], allowing higher-level request
+/// types to be built from standardized WASI HTTP requests—for example,
+/// to parse structured payloads, extract query parameters, or perform
+/// request validation.
+///
+/// # See also
+/// - [`IntoRequest`]: Converts a type into a [`wasip3::http::types::Request`].
+pub trait FromRequest {
+    /// Attempts to construct `Self` from a [`wasip3::http::types::Request`].
+    fn from_request(req: wasip3::http::types::Request) -> HttpResult<Self>
+    where
+        Self: Sized;
+}
+
+impl FromRequest for types::Request {
+    fn from_request(req: types::Request) -> HttpResult<Self> {
+        Ok(req)
+    }
+}
+
+impl FromRequest for Request {
+    fn from_request(req: types::Request) -> HttpResult<Self> {
+        http_from_wasi_request(req)
+    }
+}
 
 /// A trait for any type that can be converted into a [`wasip3::http::types::Request`].
 ///
@@ -237,36 +235,15 @@ pub trait IntoRequest {
     fn into_request(self) -> HttpResult<wasip3::http::types::Request>;
 }
 
-/// A trait for any type that can be converted into a [`wasip3::http::types::Response`].
-///
-/// This trait provides a unified interface for adapting user-defined response
-/// types into the lower-level [`wasip3::http::types::Response`] format used by
-/// the WASI HTTP subsystem.  
-///
-/// Implementing `IntoResponse` enables ergonomic conversion from domain-level
-/// response types or builders into standardized WASI HTTP responses.
-///
-/// # See also
-/// - [`FromResponse`]: The inverse conversion trait.
-pub trait IntoResponse {
-    /// Converts `self` into a [`wasip3::http::types::Response`].
-    fn into_response(self) -> HttpResult<wasip3::http::types::Response>;
-}
-
-/// A trait for constructing a value from a [`wasip3::http::types::Request`].
-///
-/// This is the inverse of [`IntoRequest`], allowing higher-level request
-/// types to be built from standardized WASI HTTP requests—for example,
-/// to parse structured payloads, extract query parameters, or perform
-/// request validation.
-///
-/// # See also
-/// - [`IntoRequest`]: Converts a type into a [`wasip3::http::types::Request`].
-pub trait FromRequest {
-    /// Attempts to construct `Self` from a [`wasip3::http::types::Request`].
-    fn from_request(req: wasip3::http::types::Request) -> HttpResult<Self>
-    where
-        Self: Sized;
+impl<T> IntoRequest for http::Request<T>
+where
+    T: http_body::Body + Any,
+    T::Data: Into<Vec<u8>>,
+    T::Error: Into<Box<dyn std::error::Error + Send + Sync + 'static>>,
+{
+    fn into_request(self) -> HttpResult<types::Request> {
+        http_into_wasi_request(self)
+    }
 }
 
 /// A trait for constructing a value from a [`wasip3::http::types::Response`].
@@ -284,116 +261,26 @@ pub trait FromResponse {
         Self: Sized;
 }
 
-impl<T> IntoRequest for http::Request<T>
-where
-    T: http_body::Body + Any,
-    T::Data: Into<Vec<u8>>,
-    T::Error: Into<Box<dyn std::error::Error + Send + Sync + 'static>>,
-{
-    fn into_request(mut self) -> HttpResult<types::Request> {
-        if let Some(incoming_body) =
-            (&mut self as &mut dyn Any).downcast_mut::<IncomingRequestBody>()
-        {
-            if let Some(request) = incoming_body.take_unstarted() {
-                return Ok(request);
-            }
-        }
-
-        let (parts, body) = self.into_parts();
-
-        let options = parts
-            .extensions
-            .get::<RequestOptionsExtension>()
-            .cloned()
-            .map(|o| o.0);
-
-        let headers = header_map_to_wasi(&parts.headers)?;
-
-        let (body_writer, contents_rx, trailers_rx) = BodyWriter::new();
-
-        let (req, _result) = types::Request::new(headers, Some(contents_rx), trailers_rx, options);
-
-        req.set_method(&method_to_wasi(&parts.method))
-            .map_err(|()| types::ErrorCode::HttpRequestMethodInvalid)?;
-
-        let scheme = parts.uri.scheme().map(scheme_to_wasi);
-        req.set_scheme(scheme.as_ref())
-            .map_err(|()| types::ErrorCode::HttpProtocolError)?;
-
-        req.set_authority(parts.uri.authority().map(|a| a.as_str()))
-            .map_err(|()| types::ErrorCode::HttpRequestUriInvalid)?;
-
-        req.set_path_with_query(parts.uri.path_and_query().map(|pq| pq.as_str()))
-            .map_err(|()| types::ErrorCode::HttpRequestUriInvalid)?;
-
-        wit_bindgen::spawn(async move {
-            let mut body = std::pin::pin!(body);
-            _ = body_writer.forward_http_body(&mut body).await;
-        });
-
-        Ok(req)
-    }
-}
-
-impl FromRequest for types::Request {
-    fn from_request(req: types::Request) -> HttpResult<Self> {
-        Ok(req)
-    }
-}
-
-impl<T: FromRequest> FromRequest for http::Request<T> {
-    fn from_request(req: types::Request) -> HttpResult<Self> {
-        let uri = {
-            let mut builder = http::Uri::builder();
-            if let Some(scheme) = req.get_scheme() {
-                builder = builder.scheme(scheme_from_wasi(scheme)?);
-            }
-            if let Some(authority) = req.get_authority() {
-                builder = builder.authority(authority);
-            }
-            if let Some(path_and_query) = req.get_path_with_query() {
-                builder = builder.path_and_query(path_and_query);
-            }
-            builder
-                .build()
-                .map_err(|_| types::ErrorCode::HttpRequestUriInvalid)?
-        };
-
-        let mut builder = http::Request::builder()
-            .method(method_from_wasi(req.get_method())?)
-            .uri(uri);
-
-        if let Some(options) = req.get_options().map(RequestOptionsExtension) {
-            builder = builder.extension(options);
-        }
-
-        for (k, v) in req.get_headers().copy_all() {
-            builder = builder.header(k, v);
-        }
-
-        let body = T::from_request(req)?;
-
-        builder.body(body).map_err(to_internal_error_code) // TODO: downcast to more specific http error codes
-    }
-}
-
-impl<T: FromResponse> FromResponse for http::Response<T> {
+impl FromResponse for Response {
     fn from_response(resp: types::Response) -> HttpResult<Self> {
-        let mut builder = http::Response::builder().status(resp.get_status_code());
-
-        for (k, v) in resp.get_headers().copy_all() {
-            builder = builder.header(k, v);
-        }
-
-        let body = T::from_response(resp)?;
-        builder.body(body).map_err(to_internal_error_code) // TODO: downcast to more specific http error codes
+        http_from_wasi_response(resp)
     }
 }
 
-impl FromRequest for () {
-    fn from_request(_req: types::Request) -> HttpResult<Self> {
-        Ok(())
-    }
+/// A trait for any type that can be converted into a [`wasip3::http::types::Response`].
+///
+/// This trait provides a unified interface for adapting user-defined response
+/// types into the lower-level [`wasip3::http::types::Response`] format used by
+/// the WASI HTTP subsystem.  
+///
+/// Implementing `IntoResponse` enables ergonomic conversion from domain-level
+/// response types or builders into standardized WASI HTTP responses.
+///
+/// # See also
+/// - [`FromResponse`]: The inverse conversion trait.
+pub trait IntoResponse {
+    /// Converts `self` into a [`wasip3::http::types::Response`].
+    fn into_response(self) -> HttpResult<wasip3::http::types::Response>;
 }
 
 impl IntoResponse for types::Response {
@@ -402,9 +289,19 @@ impl IntoResponse for types::Response {
     }
 }
 
-impl<T: http_body::Body> IntoResponse for (http::StatusCode, T) {
+impl<T> IntoResponse for (http::StatusCode, T)
+where
+    T: http_body::Body + Any,
+    T::Data: Into<Vec<u8>>,
+    T::Error: Into<Box<dyn std::error::Error + Send + Sync + 'static>>,
+{
     fn into_response(self) -> HttpResult<types::Response> {
-        unreachable!()
+        http_into_wasi_response(
+            http::Response::builder()
+                .status(self.0)
+                .body(self.1)
+                .unwrap(),
+        )
     }
 }
 
@@ -426,48 +323,8 @@ where
     T::Data: Into<Vec<u8>>,
     T::Error: Into<Box<dyn std::error::Error + Send + Sync + 'static>>,
 {
-    fn into_response(mut self) -> HttpResult<types::Response> {
-        if let Some(incoming_body) =
-            (&mut self as &mut dyn Any).downcast_mut::<IncomingResponseBody>()
-        {
-            if let Some(response) = incoming_body.take_unstarted() {
-                return Ok(response);
-            }
-        }
-
-        let headers = header_map_to_wasi(self.headers())?;
-
-        let (body_writer, body_rx, body_result_rx) = BodyWriter::new();
-
-        let (response, _future_result) =
-            types::Response::new(headers, Some(body_rx), body_result_rx);
-
-        _ = response.set_status_code(self.status().as_u16());
-
-        wit_bindgen::spawn(async move {
-            let mut body = std::pin::pin!(self.into_body());
-            _ = body_writer.forward_http_body(&mut body).await;
-        });
-
-        Ok(response)
-    }
-}
-
-impl FromRequest for IncomingRequestBody {
-    fn from_request(req: types::Request) -> HttpResult<Self>
-    where
-        Self: Sized,
-    {
-        Self::new(req)
-    }
-}
-
-impl FromResponse for IncomingResponseBody {
-    fn from_response(response: types::Response) -> HttpResult<Self>
-    where
-        Self: Sized,
-    {
-        Self::new(response)
+    fn into_response(self) -> HttpResult<types::Response> {
+        http_into_wasi_response(self)
     }
 }
 
@@ -482,8 +339,10 @@ impl FromResponse for IncomingResponseBody {
 pub mod body {
     use bytes::Bytes;
     use http_body_util::{BodyDataStream, BodyExt};
-    use wasip3_http_ext::wasip3::http::types::ErrorCode;
-    use wasip3_http_ext::{IncomingBody, IncomingMessage};
+    use wasip3::{
+        http::types::ErrorCode,
+        http_compat::{IncomingBody, IncomingMessage},
+    };
 
     /// Extension trait providing convenient methods for consuming an [`IncomingBody`].
     ///
