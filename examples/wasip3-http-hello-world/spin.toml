@@ -11,6 +11,7 @@ version = "1.0.0"
 [[trigger.http]]
 route = "/hello"
 component = "hello"
+executor = { type = "wasip3-unstable" }
 
 [component.hello]
 source = "../../target/wasm32-wasip2/release/wasip3_hello_world.wasm"

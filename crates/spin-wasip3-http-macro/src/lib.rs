@@ -3,7 +3,7 @@ use quote::quote;
 
 /// Marks an `async fn` as an HTTP component entrypoint for Spin.
 ///
-/// The `#[http_component]` attribute designates an asynchronous function as the
+/// The `#[http_service]` attribute designates an asynchronous function as the
 /// handler for incoming HTTP requests in a Spin component using the WASI Preview 3
 /// (`wasip3`) HTTP ABI.  
 ///
@@ -25,9 +25,9 @@ use quote::quote;
 /// # Example
 ///
 /// ```ignore
-/// use spin_sdk::http_wasip3::{http_component, Request, IntoResponse};
+/// use spin_sdk::http_wasip3::{http_service, Request, IntoResponse};
 ///
-/// #[http_component]
+/// #[http_service]
 /// async fn my_handler(request: Request) -> impl IntoResponse {
 ///   // Your logic goes here
 /// }
@@ -40,7 +40,7 @@ use quote::quote;
 /// handler’s entrypoint. This allows the function to be invoked automatically
 /// by the Spin runtime when HTTP requests are received.
 #[proc_macro_attribute]
-pub fn http_component(_attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn http_service(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let func = syn::parse_macro_input!(item as syn::ItemFn);
 
     if func.sig.asyncness.is_none() {

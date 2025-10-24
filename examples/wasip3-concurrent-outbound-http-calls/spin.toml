@@ -11,6 +11,7 @@ description = "Demonstrates making concurrent outbound HTTP calls in WASIp3"
 [[trigger.http]]
 route = "/..."
 component = "concurrent-outbound-http-calls"
+executor = { type = "wasip3-unstable" }
 
 [component.concurrent-outbound-http-calls]
 source = "target/wasm32-wasip2/release/concurrent_outbound_http_calls.wasm"

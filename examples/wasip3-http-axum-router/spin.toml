@@ -11,6 +11,7 @@ description = "An example application using axum"
 [[trigger.http]]
 route = "/..."
 component = "axum-router"
+executor = { type = "wasip3-unstable" }
 
 [component.axum-router]
 source = "../../target/wasm32-wasip2/release/axum_router.wasm"

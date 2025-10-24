@@ -3,9 +3,9 @@ use std::pin::pin;
 use futures::future::Either;
 use http::Request;
 use spin_sdk::http_wasip3::{send, EmptyBody, IntoResponse};
-use spin_sdk::http_wasip3::http_component;
+use spin_sdk::http_wasip3::http_service;
 
-#[http_component]
+#[http_service]
 async fn handle_concurrent_outbound_http_calls(_req: spin_sdk::http_wasip3::Request) -> anyhow::Result<impl IntoResponse> {
 
     let spin = pin!(get_content_length("https://spinframework.dev"));
