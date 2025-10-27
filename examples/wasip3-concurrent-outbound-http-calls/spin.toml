@@ -1,0 +1,21 @@
+#:schema https://schemas.spinframework.dev/spin/manifest-v2/latest.json
+
+spin_manifest_version = 2
+
+[application]
+name = "concurrent-outbound-http-calls"
+version = "0.1.0"
+authors = ["The Spin project"]
+description = "Demonstrates making concurrent outbound HTTP calls in WASIp3"
+
+[[trigger.http]]
+route = "/..."
+component = "concurrent-outbound-http-calls"
+executor = { type = "wasip3-unstable" }
+
+[component.concurrent-outbound-http-calls]
+source = "target/wasm32-wasip2/release/concurrent_outbound_http_calls.wasm"
+allowed_outbound_hosts = ["https://spinframework.dev", "https://component-model.bytecodealliance.org/"]
+[component.concurrent-outbound-http-calls.build]
+command = "cargo build --target wasm32-wasip2 --release"
+watch = ["src/**/*.rs", "Cargo.toml"]

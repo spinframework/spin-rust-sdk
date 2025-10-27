@@ -1,0 +1,21 @@
+[package]
+name = "spin-wasip3-http-macro"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage.workspace = true
+description = """
+Rust procedural macros for Spin and WASIp3
+"""
+
+[lib]
+name = "spin_wasip3_http_macro"
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1"
+quote = "1.0"
+syn = { version = "1.0", features = [ "full" ]}
