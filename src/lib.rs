@@ -1,6 +1,7 @@
 //! The Rust Spin SDK.
 
 #![deny(missing_docs)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[cfg(test)]
 mod test;
@@ -19,14 +20,56 @@ pub mod llm;
 
 pub use spin_macro::*;
 
-/// WASIp3 HTTP APIs and helpers
+/// WASIp3 HTTP APIs and helpers.
+///
+/// **The contents of this module are unstable.** Module APIs may change in future releases,
+/// and may not work with future versions of Spin (as they bind to a particular WASI RC
+/// which Spin will retire once a stable WASIp3 is available)/
 #[cfg(feature = "wasip3-unstable")]
+#[cfg_attr(docsrs, doc(cfg(feature = "wasip3-unstable")))]
 pub mod http_wasip3 {
-    /// Re-exports the helpers types for converting between WASIp3 HTTP types and
-    /// Rust ecosystem HTTP types.
     pub use spin_wasip3_http::*;
-    /// Re-exports the macro to enable WASIp3 HTTP handlers
-    pub use spin_wasip3_http_macro::*;
+
+    /// Marks an `async fn` as an HTTP component entrypoint for Spin.
+    ///
+    /// The `#[http_service]` attribute designates an asynchronous function as the
+    /// handler for incoming HTTP requests in a Spin component using the WASI Preview 3
+    /// (`wasip3`) HTTP ABI.  
+    ///
+    /// When applied, this macro generates the necessary boilerplate to export the
+    /// function to the Spin runtime as a valid HTTP handler. The function must be
+    /// declared `async` and take a single argument implementing
+    /// [`FromRequest`], typically
+    /// [`Request`], and must return a type that
+    /// implements [`IntoResponse`].
+    ///
+    /// # Requirements
+    ///
+    /// - The annotated function **must** be `async`.
+    /// - The function’s parameter type must implement [`FromRequest`].
+    /// - The return type must implement [`IntoResponse`].
+    /// - The Spin manifest must specify `executor = { type = "wasip3-unstable" }`
+    ///
+    /// If the function is not asynchronous, the macro emits a compile-time error.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use spin_sdk::http_wasip3::{http_service, Request, IntoResponse};
+    ///
+    /// #[http_service]
+    /// async fn my_handler(request: Request) -> impl IntoResponse {
+    ///   // Your logic goes here
+    /// }
+    /// ```
+    ///
+    /// # Generated Code
+    ///
+    /// The macro expands into a module containing a `Spin` struct that implements the
+    /// WASI `http.handler/Guest` interface, wiring the annotated function as the
+    /// handler’s entrypoint. This allows the function to be invoked automatically
+    /// by the Spin runtime when HTTP requests are received.
+    pub use spin_wasip3_http_macro::http_service;
 }
 
 #[doc(hidden)]
