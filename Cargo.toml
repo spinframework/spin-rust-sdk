@@ -13,6 +13,10 @@ description = """
 The Spin Rust SDK makes it easy to build Spin components in Rust.
 """
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
 [lib]
 name = "spin_sdk"
 

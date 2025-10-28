@@ -1,4 +1,4 @@
-//! Experimental Rust SDK for WASIp3 http.
+//! Experimental Rust SDK for WASIp3 HTTP.
 
 #![deny(missing_docs)]
 
@@ -328,14 +328,14 @@ where
     }
 }
 
-/// Helpers for consuming an [`IncomingBody`].
+/// Helpers for consuming an [`wasip3::http_compat::IncomingBody`].
 ///
 /// This module provides extension traits and utilities for working with
-/// [`IncomingBody`] instances, such as streaming or collecting the entire
+/// [`wasip3::http_compat::IncomingBody`] instances, such as streaming or collecting the entire
 /// body into memory.
 ///
 /// These helpers make it easier to transform low-level streaming body types
-/// into higher-level forms (e.g., [`Bytes`]) for simplified data handling.
+/// into higher-level forms (e.g., [`bytes::Bytes`]) for simplified data handling.
 pub mod body {
     use bytes::Bytes;
     use http_body_util::{BodyDataStream, BodyExt};
