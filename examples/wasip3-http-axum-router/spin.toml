@@ -5,7 +5,7 @@ spin_manifest_version = 2
 [application]
 name = "axum-router"
 version = "0.1.0"
-authors = ["Fermyon Engineering <engineering@fermyon.com>"]
+authors = ["The Spin authors"]
 description = "An example application using axum"
 
 [[trigger.http]]
