@@ -1,7 +1,7 @@
 spin_manifest_version = 2
 
 [application]
-authors = ["Fermyon Engineering <engineering@fermyon.com>"]
+authors = ["The Spin authors"]
 description = "An application which parses a JSON POST body."
 name = "json-http-rust"
 version = "1.0.0"

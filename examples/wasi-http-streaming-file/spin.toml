@@ -1,7 +1,7 @@
 spin_manifest_version = 2
 
 [application]
-authors = ["Fermyon Engineering <engineering@fermyon.com>"]
+authors = ["The Spin authors"]
 description = "An application that streams a chunked file as an HTTP response"
 name = "spin-wasi-http-streaming-file"
 version = "1.0.0"
