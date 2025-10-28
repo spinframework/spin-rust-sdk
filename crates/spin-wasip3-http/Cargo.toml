@@ -7,6 +7,9 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 homepage.workspace = true
+description = """
+Spin WASIp3 HTTP SDK
+"""
 
 [dependencies]
 anyhow = { workspace = true }
