@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-axum = { version = "0.8.1", default-features = false, features = ["json", "macros"] }
-serde = { version = "1.0.163", features = ["derive"] }
+axum = { version = "0.8.6", default-features = false, features = ["json", "macros"] }
+serde = { version = "1.0.228", features = ["derive"] }
 spin-sdk = { path = "../..", features = ["wasip3-unstable"] }
 tower-service = "0.3.3"

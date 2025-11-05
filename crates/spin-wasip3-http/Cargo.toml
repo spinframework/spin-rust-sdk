@@ -17,4 +17,4 @@ bytes = { workspace = true }
 http-body = { workspace = true }
 http-body-util = { workspace = true }
 hyperium = { workspace = true }
-wasip3 = { version = "0.2.1", features = ["http-compat"] }
+wasip3 = { version = "0.2.2", features = ["http-compat"] }
