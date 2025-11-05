@@ -54,3 +54,9 @@ jobs:
       - name: Validate docs examples
         shell: bash
         run: cargo test --doc
+
+      - name: audit dependencies
+        run: |
+          cargo install cargo-audit --locked
+          cargo audit
+

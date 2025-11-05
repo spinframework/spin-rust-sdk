@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 # Useful crate to handle errors.
 anyhow = "1"
 # General-purpose crate with common HTTP types.
-http = "1.0.0"
+http = "1.3.1"
 # The Spin SDK.
 spin-sdk = { path = "../../.." }
 

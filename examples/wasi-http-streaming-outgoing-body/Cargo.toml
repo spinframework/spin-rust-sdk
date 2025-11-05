@@ -7,9 +7,9 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-anyhow = "1.0.71"
-futures = "0.3.28"
+anyhow = "1.0.100"
+futures = "0.3.31"
 hex = "0.4.3"
-sha2 = "0.10.6"
-url = "2.4.0"
+sha2 = "0.10.9"
+url = "2.5.7"
 spin-sdk = { path = "../.." }
