@@ -1,0 +1,21 @@
+#:schema https://schemas.spinframework.dev/spin/manifest-v2/latest.json
+
+spin_manifest_version = 2
+
+[application]
+name = "wasip3-streaming"
+version = "0.1.0"
+authors = ["The Spin authors"]
+description = "Demonstrates streaming processing of requests and responses"
+
+[[trigger.http]]
+route = "/..."
+component = "wasip3-streaming"
+executor = { type = "wasip3-unstable" }
+
+[component.wasip3-streaming]
+source = "target/wasm32-wasip2/release/wasip3_streaming.wasm"
+allowed_outbound_hosts = []
+[component.wasip3-streaming.build]
+command = "cargo build --target wasm32-wasip2 --release"
+watch = ["src/**/*.rs", "Cargo.toml"]
