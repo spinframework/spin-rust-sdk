@@ -1,0 +1,23 @@
+[package]
+name = "concurrent-outbound-http-calls"
+authors = ["itowlson <ivan.towlson@fermyon.com>"]
+description = ""
+version = "0.1.0"
+rust-version = "1.90"                             # required for `wasm32-wasip2` target to build WASIp3
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = "1"
+bytes = "1.10.1"
+futures = "0.3.31"
+http = "1.3"
+http-body = "1"
+http-body-util = "0.1.3"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+spin-sdk = { path = "../..", features = ["wasip3-unstable"] }
+
+[workspace]
