@@ -1,9 +1,9 @@
 [package]
-name = "concurrent-outbound-http-calls"
-authors = ["itowlson <ivan.towlson@fermyon.com>"]
+name = "competing-outbound-http-calls"
+authors = ["mikkelhegn <mikkel.hegnhoj@fermyon.com>"]
 description = ""
 version = "0.1.0"
-rust-version = "1.90"                             # required for `wasm32-wasip2` target to build WASIp3
+rust-version = "1.90"                                 # required for `wasm32-wasip2` target to build WASIp3
 edition = "2021"
 
 [lib]

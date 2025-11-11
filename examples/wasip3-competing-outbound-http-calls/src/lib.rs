@@ -13,7 +13,7 @@ use futures::{
 };
 
 #[http_service]
-async fn handle_concurrent_outbound_http_calls(
+async fn handle_competing_outbound_http_calls(
     _req: spin_sdk::http_wasip3::Request,
 ) -> impl IntoResponse {
     println!("Handling reuqest");
