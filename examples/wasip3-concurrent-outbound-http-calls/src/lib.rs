@@ -26,7 +26,7 @@ async fn handle_concurrent_outbound_http_calls(_req: spin_sdk::http_wasip3::Requ
     // Spawn a task to run the application logic and stream the results
     // to the client. `spawn` continues to run this future even after the
     // function has exited with the return of the Response object.
-    spin_sdk::http_wasip3::wasip3::wit_bindgen::spawn(
+    spin_sdk::http_wasip3::spawn(
         handle_concurrent_outbound_http_calls_impl(tx)
     );
 
