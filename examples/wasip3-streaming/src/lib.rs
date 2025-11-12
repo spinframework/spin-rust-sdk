@@ -30,7 +30,7 @@ async fn handle_wasip3_streaming(request: Request) -> impl IntoResponse {
 
     // Use wit_bindgen::spawn to allow the async block to keep running
     // after the handler returns.
-    spin_sdk::http_wasip3::wasip3::wit_bindgen::spawn(async move {
+    spin_sdk::http_wasip3::spawn(async move {
         tx.send("-- INBOUND MESSAGE --\n".into()).await.unwrap();
         // Keep processing data from the incoming body stream until it ends...
         loop {

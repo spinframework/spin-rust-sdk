@@ -5,9 +5,14 @@
 #[doc(hidden)]
 pub use wasip3;
 
+pub use wasip3::{
+    http_compat::{IncomingMessage, Request, Response},
+    wit_bindgen::{self, spawn},
+    wit_future, wit_stream,
+};
+
 use hyperium as http;
 use std::any::Any;
-pub use wasip3::http_compat::{Request, Response};
 use wasip3::{
     http::types,
     http_compat::{
