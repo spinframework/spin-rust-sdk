@@ -1,0 +1,22 @@
+[package]
+name = "spin-dep-macro"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+anyhow = "1"
+proc-macro2 = "1.0.105"
+quote = "1.0.43"
+syn = "2.0.114"
+toml = "0.8"
+wasmparser = "0.239.0"
+wit-component = "0.239.0"
+wit-parser = "0.239.0"

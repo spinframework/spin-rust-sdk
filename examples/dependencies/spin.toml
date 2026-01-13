@@ -1,0 +1,38 @@
+spin_manifest_version = 2
+
+[application]
+name = "dependencies"
+version = "0.1.0"
+authors = ["itowlson <ivan.towlson@fermyon.com>"]
+description = ""
+
+[[trigger.http]]
+route = "/..."
+component = "dependency-consumer"
+
+[component.dependency-consumer]
+source = "dependency-consumer/target/wasm32-wasip2/release/dependency_consumer.wasm"
+allowed_outbound_hosts = []
+[component.dependency-consumer.build]
+command = "cargo build --target wasm32-wasip2 --release"
+workdir = "dependency-consumer"
+watch = ["src/**/*.rs", "Cargo.toml"]
+[component.dependency-consumer.dependencies]
+"calculator:calc/addition@1.0.0" = { path = "calculator/target/wasm32-wasip2/release/calculator.wasm" }
+"loudness-services:yelling/yelling@1.0.0" = { path = "yellifier/target/wasm32-wasip2/release/yellifier.wasm" }
+
+[component.calculator]
+source = "calculator/target/wasm32-wasip2/release/calculator.wasm"
+allowed_outbound_hosts = []
+[component.calculator.build]
+command = "cargo build --target wasm32-wasip2 --release"
+workdir = "calculator"
+watch = ["src/**/*.rs", "Cargo.toml"]
+
+[component.yellifier]
+source = "yellifier/target/wasm32-wasip2/release/yellifier.wasm"
+allowed_outbound_hosts = []
+[component.yellifier.build]
+command = "cargo build --target wasm32-wasip2 --release"
+workdir = "yellifier"
+watch = ["src/**/*.rs", "Cargo.toml"]

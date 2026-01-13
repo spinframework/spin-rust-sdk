@@ -1,0 +1,9 @@
+package loudness-services:yelling@1.0.0;
+
+interface yelling {
+    yell: func(text: string) -> string;
+}
+
+world yellifier {
+    export yelling;
+}

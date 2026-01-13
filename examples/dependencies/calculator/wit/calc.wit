@@ -1,0 +1,9 @@
+package calculator:calc@1.0.0;
+
+interface addition {
+    add: func(a: s32, b: s32) -> s32;
+}
+
+world calculator {
+    export addition;
+}

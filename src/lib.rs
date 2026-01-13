@@ -18,6 +18,7 @@ pub mod sqlite3;
 /// Large Language Model (Serverless AI) APIs
 pub mod llm;
 
+pub use spin_dep_macro::*;
 pub use spin_macro::*;
 
 /// WASIp3 HTTP APIs and helpers.
