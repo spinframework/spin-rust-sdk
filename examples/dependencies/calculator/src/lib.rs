@@ -5,7 +5,7 @@ spin_sdk::wit_bindgen::generate!({
 struct Calculator;
 
 impl exports::calculator::calc::addition::Guest for Calculator {
-    fn add(a: i32, b:i32) -> i32 {
+    fn add(a: i32, b: i32) -> i32 {
         a + b
     }
 }

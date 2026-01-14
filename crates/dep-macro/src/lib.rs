@@ -22,8 +22,6 @@ pub fn imports_for(input: TokenStream) -> TokenStream {
 }
 
 fn imports_for_impl(comp_name: String) -> anyhow::Result<proc_macro2::TokenStream> {
-    let out_dir = PathBuf::from(std::env::var("OUT_DIR").context("OUT_DIR not set")?);
-
     let manifest_path = find_spin_toml().context("spin.toml not found")?;
     let manifest_dir = manifest_path.parent().unwrap();
     let s = std::fs::read_to_string(&manifest_path).context("spin.toml is not valid text")?;
@@ -43,26 +41,97 @@ fn imports_for_impl(comp_name: String) -> anyhow::Result<proc_macro2::TokenStrea
             };
             let deppath = manifest_dir.join(deppath);
 
-            let enc_wit_path = out_dir.join(format!("{}.wasm", safeify(depname)));
-
             let mut wasm = read_wasm(&deppath).with_context(|| format!("failed to read Wasm from {}", deppath.display()))?;
             importize(&mut wasm, None, None).with_context(|| format!("failed to importize Wasm from {}", deppath.display()))?;
-            emit_wasm(&wasm, &enc_wit_path).with_context(|| format!("failed to save importized Wasm to {}", enc_wit_path.display()))?;
 
-            let itfs = extract_imports(wasm);
+            let itfs = extract_imports(&wasm);
 
             if itfs.is_empty() {
                 continue;
             }
 
             let ns = &itfs[0].0.namespace;
+            
+            let resolve = wasm.resolve().clone();
 
-            let mack = dep_module(&enc_wit_path, &itfs, ns);
-            tokstm.extend([mack]);
+            let mut opts = wit_bindgen_rust::Opts::default();
+            opts.generate_all = true;
+            opts.runtime_path = Some("::spin_sdk::wit_bindgen::rt".to_string());
+
+            let ts = wit_bindgen_macro_expand(opts, ns, resolve, &itfs)?;
+            let ts = proc_macro2::TokenStream::from(ts);
+            
+            let mod_name = quote::format_ident!("{}_dep", identifierify(ns));
+
+            let ts2 = quote! {
+                mod #mod_name {
+                    #ts
+                }
+            };
+            tokstm.extend([ts2]);
         }
     }
 
     Ok(tokstm)
+}
+
+use wit_parser::Resolve;
+use wit_parser::PackageId;
+
+// Adapted from wit-bindgen macro source
+fn wit_bindgen_macro_parse_source(
+    mut resolve: Resolve,
+    source: &str,
+) -> anyhow::Result<(Resolve, Vec<PackageId>, Vec<PathBuf>)> {
+    let mut pkgs = Vec::new();
+    pkgs.push(resolve.push_group(wit_parser::UnresolvedPackageGroup::parse("macro-input", source)?)?);
+    Ok((resolve, pkgs, vec![]))
+}
+
+
+// Adapted from wit-bindgen macro source
+fn wit_bindgen_macro_expand(opts: wit_bindgen_rust::Opts, ns: &str, resolve: Resolve, itfs: &[(wit_parser::PackageName, String)]) -> anyhow::Result<TokenStream> {
+    use wit_bindgen_core::WorldGenerator;
+
+    let import_clauses = itfs.iter().map(|(p, i)| format!("import {};", qname(p, i))).collect::<Vec<_>>();
+    let joined_import_clauses = import_clauses.join("\n");
+    let inline = format!(r#"
+        package test:test-{ns};
+        world spork {{
+            {joined_import_clauses}
+        }}
+    "#);
+
+    let (resolve, pkgs, self_files) = wit_bindgen_macro_parse_source(resolve, &inline)?;
+
+    let world_pre = format!("test:test-{ns}/spork");
+
+    let world = resolve
+        .select_world(&pkgs, Some(world_pre.as_str()))?;
+
+    let mut files = Default::default();
+    let mut generator = opts.build();
+    generator
+        .generate(&resolve, world, &mut files)?;
+    let (_, src) = files.iter().next().unwrap();
+    let src = std::str::from_utf8(src).unwrap().to_string();
+
+    let mut contents = src.parse::<TokenStream>().unwrap();
+
+    // Include a dummy `include_bytes!` for any files we read so rustc knows that
+    // we depend on the contents of those files.
+    for file in self_files.iter() {
+        contents.extend(
+            format!(
+                "const _: &[u8] = include_bytes!(r#\"{}\"#);\n",
+                file.display()
+            )
+            .parse::<TokenStream>()
+            .unwrap(),
+        );
+    }
+
+    Ok(contents)
 }
 
 fn find_spin_toml() -> Option<PathBuf> {
@@ -90,7 +159,7 @@ fn find_spin_toml() -> Option<PathBuf> {
     }
 }
 
-fn extract_imports(wasm: DecodedWasm) -> Vec<(wit_parser::PackageName, String)> {
+fn extract_imports(wasm: &DecodedWasm) -> Vec<(wit_parser::PackageName, String)> {
     let mut itfs = vec![];
 
     for (_pid, pp) in &wasm.resolve().packages {
@@ -166,46 +235,6 @@ fn importize(
     let resolve = std::mem::take(resolve);
     *decoded = DecodedWasm::Component(resolve, world_id);
     Ok(())
-}
-
-fn emit_wasm(decoded: &DecodedWasm, dest: impl AsRef<Path>) -> anyhow::Result<()> {
-    let decoded_package = decoded.package();
-    let bytes = wit_component::encode(decoded.resolve(), decoded_package)?;
-    std::fs::write(dest.as_ref(), bytes)?;
-    Ok(())
-}
-
-fn dep_module(wasm_path: impl AsRef<Path>, itfs: &[(wit_parser::PackageName, String)], ns: &str) -> proc_macro2::TokenStream {
-    let import_clauses = itfs.iter().map(|(p, i)| format!("import {};", qname(p, i))).collect::<Vec<_>>();
-    let joined_import_clauses = import_clauses.join("\n");
-
-    let wasm_path_str = wasm_path.as_ref().display().to_string();
-
-    let mod_name = quote::format_ident!("{}_dep", identifierify(ns));
-
-    let inline = format!(r#"
-        package test:test-{ns};
-        world spork {{
-            {joined_import_clauses}
-        }}
-    "#);
-
-    let inline_lit = syn::LitStr::new(&inline, proc_macro2::Span::call_site());
-
-    let world = format!("test:test-{ns}/spork");
-    let world_lit = syn::LitStr::new(&world, proc_macro2::Span::call_site());
-
-    quote! {
-        mod #mod_name {
-            spin_sdk::wit_bindgen::generate!({
-                inline: #inline_lit,
-                path: #wasm_path_str,
-                world: #world_lit,
-                runtime_path: "::spin_sdk::wit_bindgen::rt",
-                generate_all
-            });
-        }
-    }
 }
 
 fn qname(p: &wit_parser::PackageName, i: &str) -> String {
