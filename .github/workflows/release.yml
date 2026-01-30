@@ -5,7 +5,7 @@ on:
       - "v*"
 
 env:
-  RUST_VERSION: 1.86
+  RUST_VERSION: "1.93"
 
 jobs:
   crates:

@@ -1,7 +1,12 @@
 wasmtime::component::bindgen!({
     path: "wit",
     world: "fermyon:spin/redis-trigger",
-    async: true
+    imports: {
+        default: async,
+    },
+    exports: {
+        default: async,
+    }
 });
 
 use {
@@ -19,7 +24,7 @@ use {
         component::{Component, Linker, ResourceTable},
         Config, Engine, Store,
     },
-    wasmtime_wasi::p2::{IoView, WasiCtx, WasiCtxBuilder, WasiView},
+    wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView},
     wasmtime_wasi_http::{WasiHttpCtx, WasiHttpView},
     wit_component::ComponentEncoder,
 };
@@ -34,17 +39,18 @@ impl WasiHttpView for Ctx {
     fn ctx(&mut self) -> &mut WasiHttpCtx {
         &mut self.wasi_http
     }
-}
 
-impl WasiView for Ctx {
-    fn ctx(&mut self) -> &mut WasiCtx {
-        &mut self.wasi
+    fn table(&mut self) -> &mut ResourceTable {
+        &mut self.table
     }
 }
 
-impl IoView for Ctx {
-    fn table(&mut self) -> &mut ResourceTable {
-        &mut self.table
+impl WasiView for Ctx {
+    fn ctx(&mut self) -> WasiCtxView<'_> {
+        WasiCtxView {
+            ctx: &mut self.wasi,
+            table: &mut self.table,
+        }
     }
 }
 

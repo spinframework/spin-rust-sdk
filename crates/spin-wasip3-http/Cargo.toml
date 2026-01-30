@@ -5,7 +5,7 @@ authors.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-rust-version.workspace = true
+rust-version = "1.93"  # workspace version doesn't suffice for P3
 homepage.workspace = true
 description = """
 Spin WASIp3 HTTP SDK
@@ -17,4 +17,4 @@ bytes = { workspace = true }
 http-body = { workspace = true }
 http-body-util = { workspace = true }
 hyperium = { workspace = true }
-wasip3 = { version = "0.2.2", features = ["http-compat"] }
+wasip3 = { version = "0.4.0", features = ["http-compat"] }
