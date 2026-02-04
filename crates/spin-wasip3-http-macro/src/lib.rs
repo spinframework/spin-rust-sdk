@@ -22,7 +22,7 @@ pub fn http_service(_attr: TokenStream, item: TokenStream) -> TokenStream {
             use ::spin_sdk::http_wasip3::IntoResponse;
 
             struct Spin;
-            ::spin_sdk::http_wasip3::wasip3::http::proxy::export!(Spin);
+            ::spin_sdk::http_wasip3::wasip3::http::service::export!(Spin);
 
             impl ::spin_sdk::http_wasip3::wasip3::exports::http::handler::Guest for self::Spin {
                 async fn handle(request: ::spin_sdk::http_wasip3::wasip3::http::types::Request) -> Result<::spin_sdk::http_wasip3::wasip3::http::types::Response, ::spin_sdk::http_wasip3::wasip3::http::types::ErrorCode> {

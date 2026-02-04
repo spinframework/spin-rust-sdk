@@ -150,7 +150,7 @@ impl<Ok: IntoResponse, Err: Into<Error>> IntoResponse for Result<Ok, Err> {
 /// issuing HTTP requests within a WASI environment.
 pub async fn send(request: impl IntoRequest) -> HttpResult<Response> {
     let request = request.into_request()?;
-    let response = wasip3::http::handler::handle(request).await?;
+    let response = wasip3::http::client::send(request).await?;
     Response::from_response(response)
 }
 
