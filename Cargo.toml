@@ -97,7 +97,7 @@ wasmtime-wasi-http = "41"
 wit-component = "0.244.0"
 
 [workspace.package]
-version = "5.1.1"
+version = "5.2.0"
 authors = ["Spin Framework Maintainers <cncf-spin-maintainers@lists.cncf.io>"]
 edition = "2021"
 license = "Apache-2.0 WITH LLVM-exception"
