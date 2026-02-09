@@ -4,7 +4,7 @@ To cut a new release, you will need to do the following:
 
 1. Confirm that [CI is green](https://github.com/spinframework/spin-rust-sdk/actions) for the commit selected to be tagged and released.
 
-2. Change the workspace version number in [Cargo.toml](./Cargo.toml) and the versions for any dependencies that are part of this workspace (e.g. `spin-macro`).
+2. Change the workspace version number in [Cargo.toml](./Cargo.toml).
 
 3. Create a pull request with these changes and merge once approved.
 
@@ -26,4 +26,4 @@ To cut a new release, you will need to do the following:
 
 7. If applicable, create PR(s) or coordinate [documentation](https://github.com/spinframework/spin-docs) needs, e.g. for new features or updated functionality.
 
-8. Create a PR to update the SDK version of [examples in the Spin repo](https://github.com/spinframework/spin/examples/) that use the Rust SDK as appropriate.
+8. Create a PR to update the SDK version of [examples in the Spin repo](https://github.com/spinframework/spin/tree/main/examples/) that use the Rust SDK as appropriate.
