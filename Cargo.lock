@@ -2349,7 +2349,7 @@ dependencies = [
 
 [[package]]
 name = "spin-executor"
-version = "5.1.1"
+version = "5.2.0"
 dependencies = [
  "futures",
  "once_cell",
@@ -2358,7 +2358,7 @@ dependencies = [
 
 [[package]]
 name = "spin-macro"
-version = "5.1.1"
+version = "5.2.0"
 dependencies = [
  "anyhow",
  "bytes",
@@ -2369,7 +2369,7 @@ dependencies = [
 
 [[package]]
 name = "spin-sdk"
-version = "5.1.1"
+version = "5.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2424,7 +2424,7 @@ dependencies = [
 
 [[package]]
 name = "spin-wasip3-http"
-version = "5.1.1"
+version = "5.2.0"
 dependencies = [
  "anyhow",
  "bytes",
@@ -2436,7 +2436,7 @@ dependencies = [
 
 [[package]]
 name = "spin-wasip3-http-macro"
-version = "5.1.1"
+version = "5.2.0"
 dependencies = [
  "proc-macro2",
  "quote",
