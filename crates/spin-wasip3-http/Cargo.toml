@@ -17,4 +17,4 @@ bytes = { workspace = true }
 http-body = { workspace = true }
 http-body-util = { workspace = true }
 hyperium = { workspace = true }
-wasip3 = { version = "0.4.0", features = ["http-compat"] }
+wasip3 = { version = "0.5.0", git = "https://github.com/bytecodealliance/wasi-rs", features = ["http-compat"] }
