@@ -16,5 +16,6 @@ futures = "0.3.31"
 http = "1.3"
 http-body = "1"
 http-body-util = "0.1.3"
+spin-sdk = { path = "../.." }
 
 [workspace]

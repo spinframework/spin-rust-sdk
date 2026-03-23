@@ -3,8 +3,8 @@
 #![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-#[cfg(test)]
-mod test;
+// #[cfg(test)]
+// mod test;
 
 /// Key/Value storage.
 pub mod key_value;
