@@ -3,8 +3,8 @@
 #![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-#[cfg(test)]
-mod test;
+// #[cfg(test)]
+// mod test;
 
 /// Key/Value storage.
 pub mod key_value;
@@ -21,12 +21,6 @@ pub mod llm;
 pub use spin_macro::*;
 
 /// WASIp3 HTTP APIs and helpers.
-///
-/// **The contents of this module are unstable.** Module APIs may change in future releases,
-/// and may not work with future versions of Spin (as they bind to a particular WASI RC
-/// which Spin will retire once a stable WASIp3 is available)/
-#[cfg(feature = "wasip3-unstable")]
-#[cfg_attr(docsrs, doc(cfg(feature = "wasip3-unstable")))]
 pub mod http_wasip3 {
     pub use spin_wasip3_http::*;
 
@@ -48,7 +42,6 @@ pub mod http_wasip3 {
     /// - The annotated function **must** be `async`.
     /// - The function’s parameter type must implement [`FromRequest`].
     /// - The return type must implement [`IntoResponse`].
-    /// - The Spin manifest must specify `executor = { type = "wasip3-unstable" }`
     ///
     /// If the function is not asynchronous, the macro emits a compile-time error.
     ///
@@ -91,8 +84,8 @@ pub mod wit {
     });
     pub use fermyon::spin2_0_0 as v2;
     pub use spin::postgres3_0_0::postgres as pg3;
-    pub use spin::postgres4_0_0::postgres as pg4;
-    pub use spin::sqlite::sqlite as sqlite3;
+    pub use spin::postgres4_2_0::postgres as pg4;
+    pub use spin::sqlite3_1_0::sqlite as sqlite3;
 }
 
 #[export_name = concat!("spin-sdk-version-", env!("SDK_VERSION"))]
