@@ -1,5 +1,5 @@
 [package]
-name    = "spinredis"
+name    = "spin-redis"
 version = "0.1.0"
 edition = "2021"
 
@@ -12,4 +12,4 @@ anyhow = "1"
 # Crate to simplify working with bytes.
 bytes = "1"
 # The Spin SDK.
-spin-sdk = { path = "../.." }
+spin-sdk = { path = "../../crates/spin-sdk" }

@@ -2,7 +2,7 @@ spin_manifest_version = 2
 
 [application]
 authors = ["The Spin authors"]
-description = "A redis application."
+description = "An async redis application."
 name = "spin-redis"
 version = "0.1.0"
 
@@ -14,6 +14,6 @@ channel = "messages"
 component = "echo-message"
 
 [component.echo-message]
-source = "../../target/wasm32-wasip1/release/spinredis.wasm"
+source = "../../target/wasm32-wasip2/release/spin_redis.wasm"
 [component.echo-message.build]
-command = "cargo build --target wasm32-wasip1 --release"
+command = "cargo build --target wasm32-wasip2 --release"

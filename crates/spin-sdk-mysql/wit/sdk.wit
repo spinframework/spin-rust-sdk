@@ -1,0 +1,5 @@
+package spin:sdk;
+
+world imports {
+    import fermyon:spin/mysql@2.0.0;
+}

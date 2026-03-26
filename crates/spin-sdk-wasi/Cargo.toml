@@ -1,0 +1,12 @@
+[package]
+name = "spin-sdk-wasi"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage.workspace = true
+
+[dependencies]
+wit-bindgen = { workspace = true }

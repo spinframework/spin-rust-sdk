@@ -1,0 +1,5 @@
+package spin:sdk;
+
+world imports {
+  import spin:mqtt/mqtt@3.0.0;
+}
