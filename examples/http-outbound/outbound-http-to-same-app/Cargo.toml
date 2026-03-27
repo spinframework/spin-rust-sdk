@@ -8,5 +8,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = "1"
-spin-sdk = { path = "../../../" }
+http = "1.3"
+spin-sdk = { path = "../../../crates/spin-sdk" }
 

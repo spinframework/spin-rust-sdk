@@ -6,12 +6,12 @@ name = "rust-outbound-pg-example"
 version = "0.1.0"
 
 [[trigger.http]]
-route = "/..."
+route = "/:year"
 component = "outbound-pg"
 
 [component.outbound-pg]
 environment = { DB_URL = "host=localhost user=postgres dbname=spin_dev" }
-source = "../../target/wasm32-wasip1/release/rust_outbound_pg.wasm"
+source = "../../target/wasm32-wasip2/release/rust_outbound_pg.wasm"
 allowed_outbound_hosts = ["postgres://localhost"]
 [component.outbound-pg.build]
-command = "cargo build --target wasm32-wasip1 --release"
+command = "cargo build --target wasm32-wasip2 --release"

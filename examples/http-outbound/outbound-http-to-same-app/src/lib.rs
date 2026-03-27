@@ -1,17 +1,17 @@
 use anyhow::Result;
 use spin_sdk::{
-    http::{IntoResponse, Request, Response},
-    http_component,
+    http::{send, EmptyBody, IntoResponse, Request},
+    http_service,
 };
 
 /// Send an HTTP request and return the response.
-#[http_component]
+#[http_service]
 async fn send_outbound(_req: Request) -> Result<impl IntoResponse> {
-    let resp: Response = spin_sdk::http::send(Request::get("/hello")).await?;
-    let resp = resp
-        .into_builder()
-        .header("spin-component", "rust-outbound-http")
-        .build();
-    println!("{resp:?}");
+    let outgoing = http::Request::get("/hello").body(EmptyBody::new())?;
+    let mut resp = send(outgoing).await?;
+    resp.headers_mut().insert(
+        http::HeaderName::from_static("spin-component"),
+        http::HeaderValue::from_static("rust-outbound-http"),
+    );
     Ok(resp)
 }

@@ -1,0 +1,24 @@
+[package]
+name = "spin-sdk-pg"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage.workspace = true
+
+[features]
+default = ["json", "postgres4-types"]
+json = ["dep:serde", "dep:serde_json"]
+postgres4-types = ["dep:rust_decimal", "dep:uuid", "dep:postgres_range", "json"]
+
+[dependencies]
+chrono = "0.4.42"
+postgres_range = { version = "0.11.1", optional = true }
+rust_decimal = { version = "1.39.0", default-features = false, optional = true }
+serde_json = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+thiserror = { workspace = true }
+uuid = { version = "1.18.1", optional = true }
+wit-bindgen = { workspace = true }

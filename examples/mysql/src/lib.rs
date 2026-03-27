@@ -1,8 +1,9 @@
 use anyhow::{anyhow, Result};
-use http::{HeaderValue, Method, Request, Response};
+use bytes::Bytes;
+use http::{HeaderValue, Method, Response};
 use spin_sdk::{
-    http::Json,
-    http_component,
+    http::{body::IncomingBodyExt, EmptyBody, FullBody, OptionalBody, Request},
+    http_service,
     mysql::{self, ParameterValue},
 };
 use std::{collections::HashMap, str::FromStr};
@@ -22,11 +23,9 @@ enum RequestAction {
     Error(u16),
 }
 
-#[http_component]
-fn rust_outbound_mysql(
-    req: Request<Json<HashMap<String, String>>>,
-) -> Result<Response<Option<String>>> {
-    match parse_request(req) {
+#[http_service]
+async fn rust_outbound_mysql(req: Request) -> Result<Response<OptionalBody<Bytes>>> {
+    match parse_request(req).await? {
         RequestAction::List => list(),
         RequestAction::Get(id) => get(id),
         RequestAction::Create(name, prey, is_finicky) => create(name, prey, is_finicky),
@@ -34,30 +33,33 @@ fn rust_outbound_mysql(
     }
 }
 
-fn parse_request(req: Request<Json<HashMap<String, String>>>) -> RequestAction {
+async fn parse_request(req: Request) -> Result<RequestAction> {
     match *req.method() {
         Method::GET => match req.headers().get("spin-path-info") {
-            None => RequestAction::Error(500),
+            None => Ok(RequestAction::Error(500)),
             Some(header_val) => match header_val_to_int(header_val) {
-                Ok(None) => RequestAction::List,
-                Ok(Some(id)) => RequestAction::Get(id),
-                Err(()) => RequestAction::Error(404),
+                Ok(None) => Ok(RequestAction::List),
+                Ok(Some(id)) => Ok(RequestAction::Get(id)),
+                Err(()) => Ok(RequestAction::Error(404)),
             },
         },
         Method::POST => {
-            let map = req.body();
+            let body = req.into_body().bytes().await?;
+            let map: HashMap<String, String> = serde_json::from_slice(&body)?;
+
+            // let map = req.body();
             let name = match map.get("name") {
                 Some(n) => n.to_owned(),
-                None => return RequestAction::Error(400), // If this were a real app it would have error messages
+                None => return Ok(RequestAction::Error(400)), // If this were a real app it would have error messages
             };
             let prey = map.get("prey").cloned();
             let is_finicky = map
                 .get("is_finicky")
                 .map(|s| s == "true")
                 .unwrap_or_default();
-            RequestAction::Create(name, prey, is_finicky)
+            Ok(RequestAction::Create(name, prey, is_finicky))
         }
-        _ => RequestAction::Error(405),
+        _ => Ok(RequestAction::Error(405)),
     }
 }
 
@@ -78,7 +80,7 @@ fn header_val_to_int(header_val: &HeaderValue) -> Result<Option<i32>, ()> {
     }
 }
 
-fn list() -> Result<Response<Option<String>>> {
+fn list() -> Result<Response<OptionalBody<Bytes>>> {
     let address = std::env::var(DB_URL_ENV)?;
     let conn = mysql::Connection::open(&address)?;
 
@@ -100,17 +102,21 @@ fn list() -> Result<Response<Option<String>>> {
         response_lines.push(format!("{:#?}", pet));
     }
 
-    let response = format!(
+    let message = format!(
         "Found {} pet(s) as follows:\n{}\n\n(Column info: {})\n",
         response_lines.len(),
         response_lines.join("\n"),
         column_summary,
     );
 
-    Ok(http::Response::builder().status(200).body(Some(response))?)
+    let response = Bytes::copy_from_slice(message.as_bytes());
+
+    Ok(http::Response::builder()
+        .status(200)
+        .body(OptionalBody::Left(FullBody::new(response)))?)
 }
 
-fn get(id: i32) -> Result<Response<Option<String>>> {
+fn get(id: i32) -> Result<Response<OptionalBody<Bytes>>> {
     let address = std::env::var(DB_URL_ENV)?;
     let conn = mysql::Connection::open(&address)?;
 
@@ -119,11 +125,16 @@ fn get(id: i32) -> Result<Response<Option<String>>> {
     let rowset = conn.query(sql, &params)?;
 
     match rowset.rows.first() {
-        None => Ok(http::Response::builder().status(404).body(None)?),
+        None => Ok(http::Response::builder()
+            .status(404)
+            .body(OptionalBody::Right(EmptyBody::new()))?),
         Some(row) => {
             let pet = as_pet(row)?;
-            let response = format!("{:?}", pet);
-            Ok(http::Response::builder().status(200).body(Some(response))?)
+            let message = format!("{:?}", pet);
+            let response = Bytes::copy_from_slice(message.as_bytes());
+            Ok(http::Response::builder()
+                .status(200)
+                .body(OptionalBody::Left(FullBody::new(response)))?)
         }
     }
 }
@@ -132,7 +143,7 @@ fn create(
     name: String,
     prey: Option<String>,
     is_finicky: bool,
-) -> Result<Response<Option<String>>> {
+) -> Result<Response<OptionalBody<Bytes>>> {
     let address = std::env::var(DB_URL_ENV)?;
     let conn = mysql::Connection::open(&address)?;
 
@@ -159,11 +170,13 @@ fn create(
     Ok(http::Response::builder()
         .status(201)
         .header("Location", location_url)
-        .body(None)?)
+        .body(OptionalBody::Right(EmptyBody::new()))?)
 }
 
-fn error(status: u16) -> Result<Response<Option<String>>> {
-    Ok(http::Response::builder().status(status).body(None)?)
+fn error(status: u16) -> Result<Response<OptionalBody<Bytes>>> {
+    Ok(http::Response::builder()
+        .status(status)
+        .body(OptionalBody::Right(EmptyBody::new()))?)
 }
 
 fn format_col(column: &mysql::Column) -> String {

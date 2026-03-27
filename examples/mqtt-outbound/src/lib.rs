@@ -1,8 +1,7 @@
 use anyhow::Result;
 use spin_sdk::{
-    http::responses::internal_server_error,
-    http::{IntoResponse, Request, Response},
-    http_component, mqtt,
+    http::{IntoResponse, Request},
+    http_service, mqtt,
 };
 use std::env;
 
@@ -21,8 +20,8 @@ const MQTT_TOPIC_ENV: &str = "MQTT_TOPIC";
 /// This HTTP component demonstrates publishing a value to Mqtt
 /// topic. The component is triggered by an HTTP
 /// request served on the route configured in the `spin.toml`.
-#[http_component]
-fn publish(_req: Request) -> Result<impl IntoResponse> {
+#[http_service]
+async fn publish(_req: Request) -> Result<impl IntoResponse> {
     let address = env::var(MQTT_ADDRESS_ENV)?;
     let username = env::var(MQTT_USERNAME_ENV)?;
     let password = env::var(MQTT_PASSWORD_ENV)?;
@@ -32,11 +31,11 @@ fn publish(_req: Request) -> Result<impl IntoResponse> {
     let message = Vec::from("Eureka!");
 
     // Open connection to Mqtt server
-    let conn = mqtt::Connection::open(&address, &username, &password, keep_alive_interval)?;
+    let conn = mqtt::Connection::open(address, username, password, keep_alive_interval).await?;
 
     // Publish to Mqtt server
-    match conn.publish(&topic, &message, mqtt::Qos::AtLeastOnce) {
-        Ok(()) => Ok(Response::new(200, ())),
-        Err(_e) => Ok(internal_server_error()),
+    match conn.publish(topic, message, mqtt::Qos::AtLeastOnce).await {
+        Ok(()) => Ok(http::StatusCode::OK),
+        Err(_e) => Ok(http::StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
