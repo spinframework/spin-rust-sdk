@@ -1961,6 +1961,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "rust-sqlite"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "http 1.4.0",
+ "serde",
+ "serde_json",
+ "spin-sdk",
+]
+
+[[package]]
 name = "rust_decimal"
 version = "1.40.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

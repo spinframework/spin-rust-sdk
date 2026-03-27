@@ -15,6 +15,7 @@ members = [
   "examples/postgres",
   "examples/redis",
   "examples/redis-outbound",
+  "examples/sqlite",
   "examples/variables",
   # "test-cases/simple-http",
   # "test-cases/simple-redis",
@@ -27,7 +28,7 @@ authors = ["Spin Framework Maintainers <cncf-spin-maintainers@lists.cncf.io>"]
 edition = "2021"
 license = "Apache-2.0 WITH LLVM-exception"
 repository = "https://github.com/spinframework/spin-rust-sdk"
-rust-version = "1.86"
+rust-version = "1.93"
 homepage = "https://spinframework.dev/rust-components"
 
 [workspace.dependencies]

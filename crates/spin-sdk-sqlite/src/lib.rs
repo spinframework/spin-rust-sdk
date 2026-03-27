@@ -2,254 +2,169 @@
 #![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-use wit::sqlite;
-
 #[doc(inline)]
-pub use sqlite::{Error, Value};
+pub use wit::sqlite::{Error, Value};
 
 /// An open connection to a SQLite database.
 ///
+/// [Connection::execute()] returns a tuple of `(columns, rows_stream, finish_future)`
+/// where rows are consumed from a stream and the finish future is awaited to check
+/// for errors.
+///
 /// # Examples
 ///
-/// Load a set of rows from the default SQLite database, and iterate over them.
+/// Open the default database, query rows, and iterate over the stream.
 ///
 /// ```no_run
+/// # async fn run() -> anyhow::Result<()> {
 /// use spin_sdk::sqlite::{Connection, Value};
 ///
-/// # fn main() -> anyhow::Result<()> {
-/// # let min_age = 0;
-/// let db = Connection::open_default()?;
+/// let min_age = 0;
+/// let db = Connection::open_default().await?;
 ///
-/// let query_result = db.execute(
+/// let (columns, mut rows, finish) = db.execute(
 ///     "SELECT * FROM users WHERE age >= ?",
-///     &[Value::Integer(min_age)]
-/// )?;
+///     [Value::Integer(min_age)],
+/// ).await?;
 ///
-/// let name_index = query_result.columns.iter().position(|c| c == "name").unwrap();
+/// let name_idx = columns.iter().position(|c| c == "name").unwrap();
 ///
-/// for row in &query_result.rows {
-///     let name: &str = row.get(name_index).unwrap();
+/// while let Some(row) = rows.next().await {
+///     let name: &str = row.get(name_idx).unwrap();
 ///     println!("Found user {name}");
 /// }
+///
+/// finish.await?;
 /// # Ok(())
 /// # }
 /// ```
 ///
-/// Use the [QueryResult::rows()] wrapper to access a column by name. This is simpler and
-/// more readable but incurs a lookup on each access, so is not recommended when
-/// iterating a data set.
+/// Perform an aggregate (scalar) operation over a named database.
 ///
 /// ```no_run
-/// # use spin_sdk::sqlite::{Connection, Value};
-/// # fn main() -> anyhow::Result<()> {
-/// # let user_id = 0;
-/// let db = Connection::open_default()?;
-/// let query_result = db.execute(
-///     "SELECT * FROM users WHERE id = ?",
-///     &[Value::Integer(user_id)]
-/// )?;
-/// let name = query_result.rows().next().and_then(|r| r.get::<&str>("name")).unwrap();
-/// # Ok(())
-/// # }
-/// ```
-///
-/// Perform an aggregate (scalar) operation over a named SQLite database. The result
-/// set contains a single column, with a single row.
-///
-/// ```no_run
+/// # async fn run() -> anyhow::Result<()> {
 /// use spin_sdk::sqlite::Connection;
 ///
-/// # fn main() -> anyhow::Result<()> {
-/// # let user_id = 0;
-/// let db = Connection::open("customer-data")?;
-/// let query_result = db.execute("SELECT COUNT(*) FROM users", &[])?;
-/// let count = query_result.rows.first().and_then(|r| r.get::<usize>(0)).unwrap();
-/// # Ok(())
-/// # }
-/// ```
+/// let db = Connection::open("customer-data").await?;
+/// let (_columns, mut rows, finish) = db.execute("SELECT COUNT(*) FROM users", []).await?;
 ///
-/// Delete rows from a SQLite database. The usual [Connection::execute()] syntax
-/// is used but the query result is always empty.
-///
-/// ```no_run
-/// use spin_sdk::sqlite::{Connection, Value};
-///
-/// # fn main() -> anyhow::Result<()> {
-/// # let min_age = 18;
-/// let db = Connection::open("customer-data")?;
-/// db.execute("DELETE FROM users WHERE age < ?", &[Value::Integer(min_age)])?;
-/// # Ok(())
-/// # }
-/// ```
-#[doc(inline)]
-pub use sqlite::Connection;
-
-/// The result of a SQLite query issued with [Connection::execute()].
-///
-/// # Examples
-///
-/// Load a set of rows from the default SQLite database, and iterate over them.
-///
-/// ```no_run
-/// use spin_sdk::sqlite::{Connection, Value};
-///
-/// # fn main() -> anyhow::Result<()> {
-/// # let min_age = 0;
-/// let db = Connection::open_default()?;
-///
-/// let query_result = db.execute(
-///     "SELECT * FROM users WHERE age >= ?",
-///     &[Value::Integer(min_age)]
-/// )?;
-///
-/// let name_index = query_result.columns.iter().position(|c| c == "name").unwrap();
-///
-/// for row in &query_result.rows {
-///     let name: &str = row.get(name_index).unwrap();
-///     println!("Found user {name}");
+/// if let Some(row) = rows.next().await {
+///     let count: i64 = row.get(0).unwrap();
+///     println!("Total users: {count}");
 /// }
+///
+/// finish.await?;
 /// # Ok(())
 /// # }
 /// ```
 ///
-/// Use the [QueryResult::rows()] wrapper to access a column by name. This is simpler and
-/// more readable but incurs a lookup on each access, so is not recommended when
-/// iterating a data set.
+/// Delete rows from a database. The row stream will be empty, but the finish
+/// future must still be awaited.
 ///
 /// ```no_run
-/// # use spin_sdk::sqlite::{Connection, Value};
-/// # fn main() -> anyhow::Result<()> {
-/// # let user_id = 0;
-/// let db = Connection::open_default()?;
-/// let query_result = db.execute(
-///     "SELECT * FROM users WHERE id = ?",
-///     &[Value::Integer(user_id)]
-/// )?;
-/// let name = query_result.rows().next().and_then(|r| r.get::<&str>("name")).unwrap();
-/// # Ok(())
-/// # }
-/// ```
-///
-/// Perform an aggregate (scalar) operation over a named SQLite database. The result
-/// set contains a single column, with a single row.
-///
-/// ```no_run
-/// use spin_sdk::sqlite::Connection;
-///
-/// # fn main() -> anyhow::Result<()> {
-/// # let user_id = 0;
-/// let db = Connection::open("customer-data")?;
-/// let query_result = db.execute("SELECT COUNT(*) FROM users", &[])?;
-/// let count = query_result.rows.first().and_then(|r| r.get::<usize>(0)).unwrap();
-/// # Ok(())
-/// # }
-/// ```
-#[doc(inline)]
-pub use sqlite::QueryResult;
-
-/// A database row result.
-///
-/// There are two representations of a SQLite row in the SDK. This type is obtained from
-/// the [field@QueryResult::rows] field, and provides index-based lookup or low-level access
-/// to row values via a vector. The [Row] type is useful for
-/// addressing elements by column name, and is obtained from the [QueryResult::rows()] function.
-///
-/// # Examples
-///
-/// Load a set of rows from the default SQLite database, and iterate over them selecting one
-/// field from each. The example caches the index of the desired field to avoid repeated lookup,
-/// making this more efficient than the [Row]-based equivalent at the expense of
-/// extra code and inferior readability.
-///
-/// ```no_run
+/// # async fn run() -> anyhow::Result<()> {
 /// use spin_sdk::sqlite::{Connection, Value};
 ///
-/// # fn main() -> anyhow::Result<()> {
-/// # let min_age = 0;
-/// let db = Connection::open_default()?;
+/// let min_age = 18;
+/// let db = Connection::open("customer-data").await?;
+/// let (_columns, _rows, finish) = db.execute(
+///     "DELETE FROM users WHERE age < ?",
+///     [Value::Integer(min_age)],
+/// ).await?;
 ///
-/// let query_result = db.execute(
-///     "SELECT * FROM users WHERE age >= ?",
-///     &[Value::Integer(min_age)]
-/// )?;
-///
-/// let name_index = query_result.columns.iter().position(|c| c == "name").unwrap();
-///
-/// for row in &query_result.rows {
-///     let name: &str = row.get(name_index).unwrap();
-///     println!("Found user {name}");
-/// }
+/// finish.await?;
 /// # Ok(())
 /// # }
 /// ```
-#[doc(inline)]
-pub use sqlite::RowResult;
+pub struct Connection(wit::sqlite::Connection);
 
-impl sqlite::Connection {
+impl Connection {
     /// Open a connection to the default database
-    pub fn open_default() -> Result<Self, Error> {
-        Self::open("default")
+    pub async fn open_default() -> Result<Self, Error> {
+        Self::open("default").await
+    }
+
+    /// Open a connection to a named database instance.
+    ///
+    /// If `database` is "default", the default instance is opened.
+    ///
+    /// `error::no-such-database` will be raised if the `name` is not recognized.
+    pub async fn open(database: impl AsRef<str>) -> Result<Self, Error> {
+        wit::sqlite::Connection::open_async(database.as_ref().to_string())
+            .await
+            .map(Connection)
+    }
+
+    /// Execute a statement returning back data if there is any
+    pub async fn execute(
+        &self,
+        statement: impl AsRef<str>,
+        parameters: impl IntoIterator<Item = Value>,
+    ) -> Result<
+        (
+            Vec<String>,
+            wit_bindgen::StreamReader<RowResult>,
+            wit_bindgen::FutureReader<Result<(), Error>>,
+        ),
+        Error,
+    > {
+        self.0
+            .execute_async(
+                statement.as_ref().to_string(),
+                parameters.into_iter().collect(),
+            )
+            .await
+    }
+
+    /// The SQLite rowid of the most recent successful INSERT on the connection, or 0 if
+    /// there has not yet been an INSERT on the connection.
+    pub async fn last_insert_rowid(&self) -> i64 {
+        self.0.last_insert_rowid_async().await
+    }
+
+    /// The number of rows modified, inserted or deleted by the most recently completed
+    /// INSERT, UPDATE or DELETE statement on the connection.
+    pub async fn changes(&self) -> u64 {
+        self.0.changes_async().await
     }
 }
 
-impl sqlite::QueryResult {
-    /// Get all the rows for this query result
-    pub fn rows(&self) -> impl Iterator<Item = Row<'_>> {
-        self.rows.iter().map(|r| Row {
-            columns: self.columns.as_slice(),
-            result: r,
-        })
-    }
-}
-
-/// A database row result.
+/// A single row from a SQLite query result.
 ///
-/// There are two representations of a SQLite row in the SDK.  This type is useful for
-/// addressing elements by column name, and is obtained from the [QueryResult::rows()] function.
-/// The [RowResult] type is obtained from the [field@QueryResult::rows] field, and provides
-/// index-based lookup or low-level access to row values via a vector.
-pub struct Row<'a> {
-    columns: &'a [String],
-    result: &'a sqlite::RowResult,
-}
+/// `RowResult` provides index-based access to column values via [`RowResult::get()`].
+///
+/// For name-based column access, see the [Row] wrapper obtained from
+/// [QueryResult::rows()].
+///
+/// # Examples
+///
+/// Consume rows from the async streaming API:
+///
+/// ```no_run
+/// # async fn run() -> anyhow::Result<()> {
+/// use spin_sdk::sqlite::{Connection, Value};
+///
+/// let db = Connection::open_default().await?;
+/// let (columns, mut rows, finish) = db.execute(
+///     "SELECT name, age FROM users WHERE age >= ?",
+///     [Value::Integer(0)],
+/// ).await?;
+///
+/// let name_idx = columns.iter().position(|c| c == "name").unwrap();
+///
+/// while let Some(row) = rows.next().await {
+///     let name: &str = row.get(name_idx).unwrap();
+///     println!("Found user {name}");
+/// }
+///
+/// finish.await?;
+/// # Ok(())
+/// # }
+/// ```
+#[doc(inline)]
+pub use wit::sqlite::RowResult;
 
-impl<'a> Row<'a> {
-    /// Get a value by its column name. The value is converted to the target type.
-    ///
-    /// * SQLite integers are convertible to Rust integer types (i8, u8, i16, etc. including usize and isize) and bool.
-    /// * SQLite strings are convertible to Rust &str or &[u8] (encoded as UTF-8).
-    /// * SQLite reals are convertible to Rust f64.
-    /// * SQLite blobs are convertible to Rust &[u8] or &str (interpreted as UTF-8).
-    ///
-    /// If your code does not know the type in advance, use [RowResult] instead of `Row` to
-    /// access the underlying [Value] enum.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// use spin_sdk::sqlite::{Connection, Value};
-    ///
-    /// # fn main() -> anyhow::Result<()> {
-    /// # let user_id = 0;
-    /// let db = Connection::open_default()?;
-    /// let query_result = db.execute(
-    ///     "SELECT * FROM users WHERE id = ?",
-    ///     &[Value::Integer(user_id)]
-    /// )?;
-    /// let user_row = query_result.rows().next().unwrap();
-    ///
-    /// let name = user_row.get::<&str>("name").unwrap();
-    /// let age = user_row.get::<u16>("age").unwrap();
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn get<T: TryFrom<&'a Value>>(&self, column: &str) -> Option<T> {
-        let i = self.columns.iter().position(|c| c == column)?;
-        self.result.get(i)
-    }
-}
-
-impl sqlite::RowResult {
+impl RowResult {
     /// Get a value by its column name. The value is converted to the target type.
     ///
     /// * SQLite integers are convertible to Rust integer types (i8, u8, i16, etc. including usize and isize) and bool.
@@ -264,19 +179,22 @@ impl sqlite::RowResult {
     /// # Examples
     ///
     /// ```no_run
+    /// # async fn run() -> anyhow::Result<()> {
     /// use spin_sdk::sqlite::{Connection, Value};
     ///
-    /// # fn main() -> anyhow::Result<()> {
-    /// # let user_id = 0;
-    /// let db = Connection::open_default()?;
-    /// let query_result = db.execute(
+    /// let db = Connection::open_default().await?;
+    /// let (_columns, mut rows, finish) = db.execute(
     ///     "SELECT name, age FROM users WHERE id = ?",
-    ///     &[Value::Integer(user_id)]
-    /// )?;
-    /// let user_row = query_result.rows.first().unwrap();
+    ///     [Value::Integer(0)],
+    /// ).await?;
     ///
-    /// let name = user_row.get::<&str>(0).unwrap();
-    /// let age = user_row.get::<u16>(1).unwrap();
+    /// if let Some(row) = rows.next().await {
+    ///     let name: &str = row.get(0).unwrap();
+    ///     let age: u16 = row.get(1).unwrap();
+    ///     println!("{name} is {age} years old");
+    /// }
+    ///
+    /// finish.await?;
     /// # Ok(())
     /// # }
     /// ```

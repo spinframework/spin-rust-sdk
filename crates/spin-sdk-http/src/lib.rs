@@ -21,10 +21,6 @@ use wasip3::{
     },
 };
 
-// mod router;
-// #[doc(inline)]
-// pub use router::*;
-
 /// A alias for [`std::result::Result`] that uses [`Error`] as the default error type.
 ///
 /// This allows functions throughout the crate to return `Result<T>`
