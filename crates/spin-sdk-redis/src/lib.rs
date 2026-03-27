@@ -125,8 +125,8 @@ pub mod wit {
     #![allow(missing_docs)]
 
     wit_bindgen::generate!({
-        world: "imports",
-        path: "./wit",
+        world: "spin-sdk-redis",
+        path: "../../wit",
         generate_all,
     });
 

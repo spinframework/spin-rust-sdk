@@ -1,5 +1,0 @@
-package spin:sdk;
-
-world imports {
-    import spin:variables/variables@3.0.0;
-}

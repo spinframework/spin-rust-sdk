@@ -1,5 +1,0 @@
-package spin:sdk;
-
-world imports {
-    import spin:key-value/key-value@3.0.0;
-}

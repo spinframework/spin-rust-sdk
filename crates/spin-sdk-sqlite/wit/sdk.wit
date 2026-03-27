@@ -1,5 +1,0 @@
-package spin:sdk;
-
-world imports {
-    import spin:sqlite/sqlite@3.1.0;
-}

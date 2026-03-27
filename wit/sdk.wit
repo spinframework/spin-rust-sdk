@@ -1,0 +1,40 @@
+package spin:sdk;
+
+world spin-sdk-kv {
+    import spin:key-value/key-value@3.0.0;
+}
+
+world spin-sdk-llm {
+    import fermyon:spin/llm@2.0.0;
+}
+
+world spin-sdk-mqtt {
+    import spin:mqtt/mqtt@3.0.0;
+}
+
+world spin-sdk-mysql {
+    import fermyon:spin/mysql@2.0.0;
+}
+
+world spin-sdk-pg {
+    import spin:postgres/postgres@4.2.0;
+}
+
+world spin-sdk-redis {
+    import spin:redis/redis@3.0.0;
+}
+
+world spin-sdk-sqlite {
+    import spin:sqlite/sqlite@3.1.0;
+}
+
+world spin-sdk-variables {
+    import spin:variables/variables@3.0.0;
+}
+
+world spin-sdk-wasi {
+    import wasi:config/store@0.2.0-draft-2024-09-27;
+    include wasi:keyvalue/imports@0.2.0-draft2;
+    @unstable(feature = wasi-otel)
+    include wasi:otel/imports@0.2.0-rc.2;
+}
