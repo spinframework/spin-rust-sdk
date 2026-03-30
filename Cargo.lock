@@ -1947,7 +1947,11 @@ name = "rust-outbound-pg"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bytes",
+ "futures",
  "http 1.4.0",
+ "http-body 1.0.1",
+ "http-body-util",
  "spin-sdk",
 ]
 

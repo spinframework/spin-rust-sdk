@@ -37,6 +37,35 @@
 // error fields instead of just a string
 #![allow(clippy::result_large_err)]
 
+use std::sync::Arc;
+
+#[doc(hidden)]
+/// Module containing wit bindgen generated code.
+///
+/// This is only meant for internal consumption.
+pub mod wit {
+    #![allow(missing_docs)]
+
+    wit_bindgen::generate!({
+        world: "spin-sdk-pg",
+        path: "../../wit",
+        generate_all,
+    });
+
+    pub use spin::postgres::postgres;
+}
+
+#[doc(inline)]
+pub use wit::spin::postgres::postgres::{
+    Column, DbDataType, DbError, DbValue, Error as PgError, ParameterValue, QueryError,
+    RangeBoundKind,
+};
+
+/// The PostgreSQL INTERVAL data type.
+pub use wit::postgres::Interval;
+
+use chrono::{Datelike, Timelike};
+
 /// An open connection to a PostgreSQL database.
 ///
 /// # Examples
@@ -46,21 +75,21 @@
 /// ```no_run
 /// use spin_sdk::pg4::{Connection, Decode};
 ///
-/// # fn main() -> anyhow::Result<()> {
+/// # async fn main() -> anyhow::Result<()> {
 /// # let min_age = 0;
-/// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb")?;
+/// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb").await?;
 ///
 /// let query_result = db.query(
 ///     "SELECT * FROM users WHERE age >= $1",
 ///     &[min_age.into()]
-/// )?;
+/// ).await?;
 ///
-/// let name_index = query_result.columns.iter().position(|c| c.name == "name").unwrap();
-///
-/// for row in &query_result.rows {
-///     let name = String::decode(&row[name_index])?;
+/// while let Some(row) = query_result.next().await {
+///     let name = row.get::<String>("name").unwrap();
 ///     println!("Found user {name}");
 /// }
+///
+/// query_result,result().await?;
 /// # Ok(())
 /// # }
 /// ```
@@ -71,16 +100,19 @@
 /// ```no_run
 /// use spin_sdk::pg4::{Connection, Decode};
 ///
-/// # fn main() -> anyhow::Result<()> {
-/// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb")?;
+/// # async fn main() -> anyhow::Result<()> {
+/// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb").await?;
 ///
-/// let query_result = db.query("SELECT COUNT(*) FROM users", &[])?;
+/// let query_result = db.query("SELECT COUNT(*) FROM users", &[]).await?;
 ///
-/// assert_eq!(1, query_result.columns.len());
-/// assert_eq!("count", query_result.columns[0].name);
-/// assert_eq!(1, query_result.rows.len());
+/// assert_eq!(1, query_result.columns().len());
+/// assert_eq!("count", query_result.columns()[0].name);
 ///
-/// let count = i64::decode(&query_result.rows[0][0])?;
+/// let rows = query_result.collect().await?;
+///
+/// assert_eq!(1, rows.len());
+///
+/// let count = i64::decode(rows[0][0])?;
 /// # Ok(())
 /// # }
 /// ```
@@ -91,80 +123,215 @@
 /// ```no_run
 /// use spin_sdk::pg4::Connection;
 ///
-/// # fn main() -> anyhow::Result<()> {
-/// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb")?;
+/// # async fn main() -> anyhow::Result<()> {
+/// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb").await?;
 ///
 /// let rows_affected = db.execute(
 ///     "DELETE FROM users WHERE name = $1",
 ///     &["Baldrick".to_owned().into()]
-/// )?;
+/// ).await?;
 /// # Ok(())
 /// # }
 /// ```
-#[doc(inline)]
-pub use wit::spin::postgres::postgres::Connection;
+pub struct Connection(wit::postgres::Connection);
 
-/// The result of a database query.
-///
-/// # Examples
-///
-/// Load a set of rows from a local PostgreSQL database, and iterate over them
-/// selecting one field from each. The columns collection allows you to find
-/// column indexes for column names; you can bypass this lookup if you name
-/// specific columns in the query.
-///
-/// ```no_run
-/// use spin_sdk::pg4::{Connection, Decode};
-///
-/// # fn main() -> anyhow::Result<()> {
-/// # let min_age = 0;
-/// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb")?;
-///
-/// let query_result = db.query(
-///     "SELECT * FROM users WHERE age >= $1",
-///     &[min_age.into()]
-/// )?;
-///
-/// let name_index = query_result.columns.iter().position(|c| c.name == "name").unwrap();
-///
-/// for row in &query_result.rows {
-///     let name = String::decode(&row[name_index])?;
-///     println!("Found user {name}");
-/// }
-/// # Ok(())
-/// # }
-/// ```
-pub use wit::spin::postgres::postgres::RowSet;
+/// Options for opening a [`Connection`].
+#[derive(Default)]
+pub struct OpenOptions {
+    /// A certificate for the root certificate authority to use in TLS
+    /// for the connection.
+    pub ca_root: Option<Certificate>,
+}
 
-impl RowSet {
-    /// Get all the rows for this query result
-    pub fn rows(&self) -> impl Iterator<Item = Row<'_>> {
-        self.rows.iter().map(|r| Row {
-            columns: self.columns.as_slice(),
+/// A TLS certificate. This is a text document (starting with `-----BEGIN CERTIFICATE-----`).
+pub enum Certificate {
+    /// The certificate is a file mounted in the guest at the given path.
+    FilePath(String),
+    /// The certificate text is the given string.
+    Text(String),
+}
+
+impl Certificate {
+    fn load(self) -> Result<String, Error> {
+        match self {
+            Certificate::FilePath(path) => std::fs::read_to_string(path)
+                .map_err(|e| Error::PgError(PgError::Other(e.to_string()))),
+            Certificate::Text(text) => Ok(text),
+        }
+    }
+}
+
+impl Connection {
+    /// Open a connection to a PostgreSQL database.
+    ///
+    /// The address may be in connection string form (`"host=... dbname=..."`)
+    /// or in URL form (`"postgres://<host>/<dbname>?..."`).
+    ///
+    /// This constructor does not support options such as custom CA roots.
+    /// See [`Connection::open_with_options`] for a more flexible constructor.
+    pub async fn open(address: impl Into<String>) -> Result<Self, Error> {
+        let inner = wit::postgres::Connection::open_async(address.into()).await?;
+        Ok(Self(inner))
+    }
+
+    /// Open a connection to a PostgreSQL database.
+    ///
+    /// The address may be in connection string form (`"host=... dbname=..."`)
+    /// or in URL form (`"postgres://<host>/<dbname>?..."`).
+    ///
+    /// The `options` parameter allows for passing options not available in the address string.
+    pub async fn open_with_options(
+        address: impl AsRef<str>,
+        options: OpenOptions,
+    ) -> Result<Self, Error> {
+        let builder = wit::postgres::ConnectionBuilder::new(address.as_ref());
+        let OpenOptions { ca_root } = options;
+
+        if let Some(ca_root) = ca_root {
+            let ca_root_text = ca_root.load()?;
+            builder.set_ca_root(&ca_root_text)?;
+        }
+
+        let inner = builder.build_async().await?;
+        Ok(Self(inner))
+    }
+
+    /// Query the database.
+    ///
+    /// Use this function for queries that return rows (typically `SELECT` queries).
+    /// For side-effectful queries, see [`Connection::execute`].
+    pub async fn query(
+        &self,
+        statement: impl Into<String>,
+        params: impl Into<Vec<ParameterValue>>,
+    ) -> Result<QueryResult, Error> {
+        let (columns, rows, result) = self.0.query_async(statement.into(), params.into()).await?;
+        // let result = result.into_future();
+        Ok(QueryResult {
+            columns: Arc::new(columns),
+            rows,
+            result,
+        })
+    }
+
+    /// Execute a command against the database.
+    ///
+    /// Use this function for side-effectful queries (such as `INSERT` or `DELETE` queries).
+    /// For queries that return row data, see [`Connection::query`].
+    pub async fn execute(
+        &self,
+        statement: impl Into<String>,
+        params: impl Into<Vec<ParameterValue>>,
+    ) -> Result<u64, Error> {
+        self.0
+            .execute_async(statement.into(), params.into())
+            .await
+            .map_err(Error::PgError)
+    }
+
+    /// Extracts the underlying Wasm Component Model resource for the connection.
+    pub fn into_inner(self) -> wit::postgres::Connection {
+        self.0
+    }
+}
+
+/// The result of a [`Connection::query`] operation.
+pub struct QueryResult {
+    columns: Arc<Vec<Column>>,
+    rows: wit_bindgen::StreamReader<Vec<DbValue>>,
+    result: wit_bindgen::FutureReader<Result<(), PgError>>,
+}
+
+impl QueryResult {
+    /// The columns in the query result.
+    pub fn columns(&self) -> &[Column] {
+        &self.columns
+    }
+
+    // TODO: should this return Result<Option<Row>> so users
+    // could write `q.next().await?` instead of checking `result`
+    // separately???
+
+    /// Gets the next row in the result set.
+    ///
+    /// If this is `None`, there are no more rows available. You _must_
+    /// await [`QueryResult::result()`] to determine if all rows
+    /// were read successfully.
+    pub async fn next(&mut self) -> Option<Row> {
+        self.rows.next().await.map(|r| Row {
+            columns: self.columns.clone(),
             result: r,
         })
+    }
+
+    /// Whether the query completed successfully or with an error.
+    pub async fn result(self) -> Result<(), Error> {
+        self.result.await.map_err(Error::PgError)
+    }
+
+    /// Collect all rows in the result set.
+    ///
+    /// This is provided for when the result set is small enough to fit in
+    /// memory and you do not require streaming behaviour.
+    pub async fn collect(mut self) -> Result<Vec<Row>, Error> {
+        let mut rows = vec![];
+        while let Some(row) = self.next().await {
+            rows.push(row);
+        }
+        self.result.await.map_err(Error::PgError)?;
+        Ok(rows)
+    }
+
+    /// An asynchronous reader for the rows of the query result. Call
+    /// `.next().await` to iterate over the rows. When this returns `None`,
+    /// you have read all available rows. At this point you _must_ check
+    /// [`QueryResult::result()`] to determine if the read completed
+    /// successfully.
+    ///
+    /// This provides each row as a plain vector of database values.
+    /// [`QueryResult::next()`] provides a more ergonomic wrapper.
+    ///
+    /// To collect all rows into a vector, see [`QueryResult::collect`].
+    pub fn rows(&mut self) -> &mut wit_bindgen::StreamReader<Vec<DbValue>> {
+        &mut self.rows
+    }
+
+    /// Extracts the underlying Wasm Component Model results of the query.
+    #[allow(
+        clippy::type_complexity,
+        reason = "sorry clippy that's just what the inner bits are"
+    )]
+    pub fn into_inner(
+        self,
+    ) -> (
+        Vec<Column>,
+        wit_bindgen::StreamReader<Vec<DbValue>>,
+        wit_bindgen::FutureReader<Result<(), PgError>>,
+    ) {
+        ((*self.columns).clone(), self.rows, self.result)
     }
 }
 
 /// A database row result.
 ///
 /// There are two representations of a SQLite row in the SDK.  This type is useful for
-/// addressing elements by column name, and is obtained from the [RowSet::rows()] function.
-/// The [DbValue] vector representation is obtained from the [field@RowSet::rows] field, and provides
+/// addressing elements by column name, and is obtained from the [QueryResult::next()] function.
+/// The [DbValue] vector representation is obtained from the [QueryResult::rows()] function, and provides
 /// index-based lookup or low-level access to row values via a vector.
-pub struct Row<'a> {
-    columns: &'a [wit::spin::postgres::postgres::Column],
-    result: &'a [DbValue],
+pub struct Row {
+    columns: Arc<Vec<wit::spin::postgres::postgres::Column>>,
+    result: Vec<DbValue>,
 }
 
-impl Row<'_> {
+impl Row {
     /// Get a value by its column name. The value is converted to the target type as per the
     /// conversion table shown in the module documentation.
     ///
     /// This function returns None for both no such column _and_ failed conversion. You should use
     /// it only if you do not need to address errors (that is, if you know that conversion should
-    /// never fail). If your code does not know the type in advance, use the raw [field@RowSet::rows] vector
-    /// instead of the `Row` wrapper to access the underlying [DbValue] enum: this will allow you to
+    /// never fail). If your code does not know the type in advance, use the raw [QueryResult::rows()] function
+    /// instead of the [`QueryResult::next()`] or [`QueryResult::collect()`] wrappers to access
+    /// the underlying [DbValue] enum: this will allow you to
     /// determine the type and process it accordingly.
     ///
     /// Additionally, this function performs a name lookup each time it is called. If you are iterating
@@ -196,14 +363,6 @@ impl Row<'_> {
         Decode::decode(db_value).ok()
     }
 }
-
-#[doc(inline)]
-pub use wit::spin::postgres::postgres::{Error as PgError, *};
-
-/// The PostgreSQL INTERVAL data type.
-pub use wit::spin::postgres::postgres::Interval;
-
-use chrono::{Datelike, Timelike};
 
 /// A Postgres error
 #[derive(Debug, thiserror::Error)]
@@ -841,20 +1000,6 @@ impl<T: Into<ParameterValue>> From<Option<T>> for ParameterValue {
 
 fn format_decode_err(types: &str, value: &DbValue) -> String {
     format!("Expected {} from the DB but got {:?}", types, value)
-}
-
-#[doc(hidden)]
-/// Module containing wit bindgen generated code.
-///
-/// This is only meant for internal consumption.
-pub mod wit {
-    #![allow(missing_docs)]
-
-    wit_bindgen::generate!({
-        world: "spin-sdk-pg",
-        path: "../../wit",
-        generate_all,
-    });
 }
 
 #[cfg(test)]
