@@ -1,5 +1,3 @@
-//! The Rust Spin MQTT SDK.
-//!
 //! MQTT message publishing.
 //!
 //! To receive MQTT messages, use the MQTT trigger.
@@ -9,7 +7,7 @@
 //! Send an MQTT message.
 //!
 //! ```no_run
-//! use spin_sdk_mqtt::{Connection, Qos};
+//! use spin_sdk::mqtt::{Connection, Qos};
 //!
 //! # async fn run() -> anyhow::Result<()> {
 //! let conn = Connection::open(
@@ -25,8 +23,6 @@
 //! # Ok(())
 //! # }
 //! ```
-#![deny(missing_docs)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[doc(hidden)]
 /// Module containing wit bindgen generated code.
@@ -37,7 +33,7 @@ pub mod wit {
 
     wit_bindgen::generate!({
         world: "spin-sdk-mqtt",
-        path: "../../wit",
+        path: "wit",
         generate_all,
     });
 
@@ -54,7 +50,7 @@ pub mod wit {
 /// Send an MQTT message.
 ///
 /// ```no_run
-/// use spin_sdk_mqtt::{Connection, Qos};
+/// use spin_sdk::mqtt::{Connection, Qos};
 ///
 /// # async fn run() -> anyhow::Result<()> {
 /// let conn = Connection::open(

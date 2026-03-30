@@ -13,51 +13,41 @@ such a component:
 
 ```rust
 // lib.rs
-use spin_sdk::http::{IntoResponse, Request, Response};
-use spin_sdk::http_component;
+use spin_sdk::http::{IntoResponse, Request};
+use spin_sdk::http_service;
 
 /// A simple Spin HTTP component.
-#[http_component]
-fn handle_hello_world(req: Request) -> anyhow::Result<impl IntoResponse> {
-    println!("Handling request to {:?}", req.header("spin-full-url"));
-    Ok(Response::builder()
-        .status(200)
-        .header("content-type", "text/plain")
-        .body("Hello, Fermyon")
-        .build())
+#[http_service]
+async fn hello_world(_req: Request) -> impl IntoResponse {
+    "Hello, Spin"
 }
 ```
 
 The important things to note about the function above are:
 
-- the `spin_sdk::http_component` macro marks the function as the entry point for the Spin component,
-- in the function signature (`fn handle_hello_world(req: Request) -> anyhow::Result<impl IntoResponse>`), `req` can be any number of types, including the built-in `Request` type or the `http::Request` type from the popular `http` crate
-- in the function signature, the response type can be anything that implements `IntoResponse` meaning the return type can any number of things including `anyhow::Result<impl IntoResponse>` (as shown above), `impl IntoResponse`, `Response`, `anyhow::Result<Response>`, or even the `http::Response` type from the `http` crate. 
-  - Note: Using the `http` crate will require you to add it to your Cargo.toml manifest (i.e., `cargo add http`).
+- the `spin_sdk::http_service` macro marks the function as the entry point for the Spin component,
+- in the function signature, `req` can be the built-in `Request` type (a re-export of `http::Request`) or any type that implements `FromRequest`,
+- the response type can be anything that implements `IntoResponse`, including `&str`, `String`, `http::StatusCode`, `http::Response<T>`, a tuple of `(StatusCode, body)`, or `Result<impl IntoResponse>`.
 
 ### Making Outbound HTTP Requests
 
 Let's see an example where the component makes an outbound HTTP request to a server, modifies the result, and then returns it:
 
 ```rust
-use spin_sdk::{
-    http::{IntoResponse, Request, Method, Response},
-    http_component,
-};
+use spin_sdk::http::{send, EmptyBody, IntoResponse, Request, Response};
+use spin_sdk::http_service;
 
-#[http_component]
-async fn handle_hello_world(_req: Request) -> Result<impl IntoResponse> {
+#[http_service]
+async fn handle_hello_world(_req: Request) -> anyhow::Result<impl IntoResponse> {
     // Create the outbound request object
-    let req = Request::builder()
-        .method(Method::Get)
-        .uri("https://random-data-api.fermyon.app/animals/json")
-        .build();
+    let outgoing = Request::get("https://random-data-api.fermyon.app/animals/json")
+        .body(EmptyBody::new())
+        .unwrap();
 
     // Send the request and await the response
-    let res: Response = spin_sdk::http::send(req).await?;
+    let resp: Response = send(outgoing).await?;
 
-    println!("{:?}", res);  // log the response
-    Ok(res)
+    Ok(resp)
 }
 ```
 
@@ -77,10 +67,10 @@ route = "/..."
 component = "hello-world"
 
 [component.hello-world]
-source = "target/wasm32-wasip1/release/hello_world.wasm"
+source = "target/wasm32-wasip2/release/hello_world.wasm"
 allowed_outbound_hosts = ["https://random-data-api.fermyon.app"]
 [component.hello-world.build]
-command = "cargo build --target wasm32-wasip1 --release"
+command = "cargo build --target wasm32-wasip2 --release"
 watch = ["src/**/*.rs", "Cargo.toml"]
 ```
 
@@ -90,7 +80,7 @@ Spin build can be used to build all components defined in the Spin manifest file
 
 ```bash
 $ spin build --up
-Building component hello-world with `cargo build --target wasm32-wasip1 --release`
+Building component hello-world with `cargo build --target wasm32-wasip2 --release`
     Finished release [optimized] target(s) in 0.12s
 Finished building all Spin components
 Logging component stdio to ".spin/logs/"

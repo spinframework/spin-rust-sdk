@@ -44,7 +44,7 @@ pub fn redis_subscriber(_attr: TokenStream, item: TokenStream) -> TokenStream {
             mod preamble {
                 #![allow(missing_docs)]
                 ::spin_sdk::wit_bindgen::generate!({
-                    world: "redis-trigger",
+                    world: "spin-sdk-macro-redis-trigger",
                     path: #WIT_PATH,
                     runtime_path: "::spin_sdk::wit_bindgen::rt",
                     generate_all,

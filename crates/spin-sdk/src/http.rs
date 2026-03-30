@@ -1,7 +1,3 @@
-//! Experimental Rust SDK for WASIp3 HTTP.
-
-#![deny(missing_docs)]
-
 #[doc(hidden)]
 pub use wasip3;
 
@@ -162,7 +158,7 @@ pub async fn send(request: impl IntoRequest) -> HttpResult<Response> {
 /// # Examples
 ///
 /// ```ignore
-/// use spin_sdk_http::EmptyBody;
+/// use spin_sdk::http::EmptyBody;
 ///
 /// let empty = EmptyBody::new();
 /// let response = http::Response::builder()
@@ -183,7 +179,7 @@ pub type EmptyBody = http_body_util::Empty<bytes::Bytes>;
 /// # Examples
 ///
 /// ```ignore
-/// use spin_sdk_http::FullBody;
+/// use spin_sdk::http::FullBody;
 /// use bytes::Bytes;
 ///
 /// let body = FullBody::new(Bytes::from("hello"));
@@ -206,7 +202,7 @@ pub type FullBody<T> = http_body_util::Full<T>;
 /// # Examples
 ///
 /// ```ignore
-/// use spin_sdk_http::{OptionalBody, FullBody, EmptyBody};
+/// use spin_sdk::http::{OptionalBody, FullBody, EmptyBody};
 /// use bytes::Bytes;
 ///
 /// // With a body
@@ -251,7 +247,7 @@ impl FromRequest for Request {
 ///
 /// This trait provides a unified interface for adapting user-defined request
 /// types into the lower-level [`wasip3::http::types::Request`] format used by
-/// the WASI HTTP subsystem.  
+/// the WASI HTTP subsystem.
 ///
 /// Implementing `IntoRequest` allows custom builders or wrapper types to
 /// interoperate seamlessly with APIs that expect standardized WASI HTTP
@@ -300,7 +296,7 @@ impl FromResponse for Response {
 ///
 /// This trait provides a unified interface for adapting user-defined response
 /// types into the lower-level [`wasip3::http::types::Response`] format used by
-/// the WASI HTTP subsystem.  
+/// the WASI HTTP subsystem.
 ///
 /// Implementing `IntoResponse` enables ergonomic conversion from domain-level
 /// response types or builders into standardized WASI HTTP responses.
@@ -388,7 +384,7 @@ pub mod body {
     pub trait IncomingBodyExt {
         /// Convert this [`IncomingBody`] into a [`BodyDataStream`].
         ///
-        /// This method enables iteration over the body’s data chunks as they
+        /// This method enables iteration over the body's data chunks as they
         /// arrive, without collecting them all into memory at once. It is
         /// suitable for processing large or streaming payloads efficiently.
         fn stream(self) -> BodyDataStream<Self>

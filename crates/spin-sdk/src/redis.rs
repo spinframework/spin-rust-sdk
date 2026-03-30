@@ -1,5 +1,3 @@
-//! The Spin Redis SDK.
-//!
 //! Redis storage and message publishing.
 //!
 //! To receive Redis messages, use the Redis trigger.
@@ -9,7 +7,7 @@
 //! Get a value from the Redis database.
 //!
 //! ```no_run
-//! use spin_sdk_redis::Connection;
+//! use spin_sdk::redis::Connection;
 //!
 //! # async fn run() -> anyhow::Result<()> {
 //! let conn = Connection::open("redis://127.0.0.1:6379").await?;
@@ -22,8 +20,6 @@
 //! ```
 //!
 //! See the [`Connection`] type for further examples.
-#![deny(missing_docs)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[doc(hidden)]
 /// Module containing wit bindgen generated code.
@@ -34,7 +30,7 @@ pub mod wit {
 
     wit_bindgen::generate!({
         world: "spin-sdk-redis",
-        path: "../../wit",
+        path: "wit",
         generate_all,
     });
 
@@ -50,7 +46,7 @@ use std::hash::{Hash, Hasher};
 /// Get a value from the Redis database.
 ///
 /// ```no_run
-/// use spin_sdk_redis::Connection;
+/// use spin_sdk::redis::Connection;
 ///
 /// # async fn run() -> anyhow::Result<()> {
 /// let conn = Connection::open("redis://127.0.0.1:6379").await?;
@@ -65,7 +61,7 @@ use std::hash::{Hash, Hasher};
 /// Set a value in the Redis database.
 ///
 /// ```no_run
-/// use spin_sdk_redis::Connection;
+/// use spin_sdk::redis::Connection;
 ///
 /// # async fn run() -> anyhow::Result<()> {
 /// let conn = Connection::open("redis://127.0.0.1:6379").await?;
@@ -78,11 +74,11 @@ use std::hash::{Hash, Hasher};
 /// Delete a value from the Redis database.
 ///
 /// ```no_run
-/// use spin_sdk_redis::Connection;
+/// use spin_sdk::redis::Connection;
 ///
 /// # async fn run() -> anyhow::Result<()> {
 /// let conn = Connection::open("redis://127.0.0.1:6379").await?;
-/// conn.del(&["archimedes-data".to_owned()]).await?;
+/// conn.del(&["archimedes-data"]).await?;
 /// # Ok(())
 /// # }
 /// ```
@@ -90,7 +86,7 @@ use std::hash::{Hash, Hasher};
 /// Publish a message to a Redis channel.
 ///
 /// ```no_run
-/// use spin_sdk_redis::Connection;
+/// use spin_sdk::redis::Connection;
 ///
 /// # async fn run() -> anyhow::Result<()> {
 /// let conn = Connection::open("redis://127.0.0.1:6379").await?;
@@ -114,7 +110,6 @@ impl Connection {
     }
 
     /// Publish a Redis message to the specified channel.
-    // publish: async func(channel: string, payload: payload) -> result<_, error>;
     pub async fn publish(
         &self,
         channel: impl AsRef<str>,
@@ -151,43 +146,53 @@ impl Connection {
     /// Removes the specified keys.
     ///
     /// A key is ignored if it does not exist. Returns the number of keys deleted.
-    // del: async func(keys: list<string>) -> result<u32, error>;
-    pub async fn del(&self, keys: impl IntoIterator<Item = String>) -> Result<u32, Error> {
-        self.0.del(keys.into_iter().collect()).await
-    }
-
-    /// Add the specified `values` to the set named `key`, returning the number of newly-added values.
-    // sadd: async func(key: string, values: list<string>) -> result<u32, error>;
-    pub async fn sadd(
+    pub async fn del<Key: AsRef<str>>(
         &self,
-        key: impl AsRef<str>,
-        values: impl IntoIterator<Item = String>,
+        keys: impl IntoIterator<Item = Key>,
     ) -> Result<u32, Error> {
         self.0
-            .sadd(key.as_ref().to_string(), values.into_iter().collect())
+            .del(
+                keys.into_iter()
+                    .map(|key| key.as_ref().to_string())
+                    .collect(),
+            )
             .await
     }
 
+    /// Add the specified `values` to the set named `key`, returning the number of newly-added values.
+    pub async fn sadd<Val: AsRef<str>>(
+        &self,
+        key: impl AsRef<str>,
+        values: impl IntoIterator<Item = Val>,
+    ) -> Result<u32, Error> {
+        let values = values
+            .into_iter()
+            .map(|key| key.as_ref().to_string())
+            .collect();
+
+        self.0.sadd(key.as_ref().to_string(), values).await
+    }
+
     /// Retrieve the contents of the set named `key`.
-    // smembers: async func(key: string) -> result<list<string>, error>;
     pub async fn smembers(&self, key: impl AsRef<str>) -> Result<Vec<String>, Error> {
         self.0.smembers(key.as_ref().to_string()).await
     }
 
     /// Remove the specified `values` from the set named `key`, returning the number of newly-removed values.
-    // srem: async func(key: string, values: list<string>) -> result<u32, error>;
-    pub async fn srem(
+    pub async fn srem<Val: AsRef<str>>(
         &self,
         key: impl AsRef<str>,
-        values: impl IntoIterator<Item = String>,
+        values: impl IntoIterator<Item = Val>,
     ) -> Result<u32, Error> {
-        self.0
-            .srem(key.as_ref().to_string(), values.into_iter().collect())
-            .await
+        let values = values
+            .into_iter()
+            .map(|key| key.as_ref().to_string())
+            .collect();
+
+        self.0.srem(key.as_ref().to_string(), values).await
     }
 
     /// Execute an arbitrary Redis command and receive the result.
-    // execute: async func(command: string, arguments: list<redis-parameter>) -> result<list<redis-result>, error>;
     pub async fn execute(
         &self,
         command: impl AsRef<str>,

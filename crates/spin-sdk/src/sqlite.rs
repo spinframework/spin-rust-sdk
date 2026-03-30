@@ -1,7 +1,3 @@
-//! The Spin SQLite SDK
-#![deny(missing_docs)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
-
 #[doc(hidden)]
 /// Module containing wit bindgen generated code.
 ///
@@ -11,7 +7,7 @@ pub mod wit {
 
     wit_bindgen::generate!({
         world: "spin-sdk-sqlite",
-        path: "../../wit",
+        path: "wit",
         generate_all,
     });
 
@@ -33,7 +29,7 @@ pub use wit::sqlite::{Error, Value};
 ///
 /// ```no_run
 /// # async fn run() -> anyhow::Result<()> {
-/// use spin_sdk_sqlite::{Connection, Value};
+/// use spin_sdk::sqlite::{Connection, Value};
 ///
 /// let min_age = 0;
 /// let db = Connection::open_default().await?;
@@ -59,7 +55,7 @@ pub use wit::sqlite::{Error, Value};
 ///
 /// ```no_run
 /// # async fn run() -> anyhow::Result<()> {
-/// use spin_sdk_sqlite::Connection;
+/// use spin_sdk::sqlite::Connection;
 ///
 /// let db = Connection::open("customer-data").await?;
 /// let (_columns, mut rows, finish) = db.execute("SELECT COUNT(*) FROM users", []).await?;
@@ -79,7 +75,7 @@ pub use wit::sqlite::{Error, Value};
 ///
 /// ```no_run
 /// # async fn run() -> anyhow::Result<()> {
-/// use spin_sdk_sqlite::{Connection, Value};
+/// use spin_sdk::sqlite::{Connection, Value};
 ///
 /// let min_age = 18;
 /// let db = Connection::open("customer-data").await?;
@@ -149,16 +145,13 @@ impl Connection {
 ///
 /// `RowResult` provides index-based access to column values via [`RowResult::get()`].
 ///
-/// For name-based column access, see the [Row] wrapper obtained from
-/// [QueryResult::rows()].
-///
 /// # Examples
 ///
 /// Consume rows from the async streaming API:
 ///
 /// ```no_run
 /// # async fn run() -> anyhow::Result<()> {
-/// use spin_sdk_sqlite::{Connection, Value};
+/// use spin_sdk::sqlite::{Connection, Value};
 ///
 /// let db = Connection::open_default().await?;
 /// let (columns, mut rows, finish) = db.execute(
@@ -196,7 +189,7 @@ impl RowResult {
     ///
     /// ```no_run
     /// # async fn run() -> anyhow::Result<()> {
-    /// use spin_sdk_sqlite::{Connection, Value};
+    /// use spin_sdk::sqlite::{Connection, Value};
     ///
     /// let db = Connection::open_default().await?;
     /// let (_columns, mut rows, finish) = db.execute(

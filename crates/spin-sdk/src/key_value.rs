@@ -1,6 +1,4 @@
-//! The Rust Spin KeyValue SDK.
-//!
-//! Spin key-value persistent storage
+//! Spin key-value persistent storage.
 //!
 //! This module provides a generic interface for key-value storage, which may be implemented by the host various
 //! ways (e.g. via an in-memory table, a local file, or a remote database). Details such as consistency model and
@@ -12,13 +10,11 @@
 //!
 //! ```no_run
 //! # async fn run() -> anyhow::Result<()> {
-//! let store = spin_sdk_kv::Store::open_default().await?;
+//! let store = spin_sdk::key_value::Store::open_default().await?;
 //! store.set("message", "Hello world".as_bytes()).await?;
 //! # Ok(())
 //! # }
 //! ```
-#![deny(missing_docs)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[doc(hidden)]
 /// Module containing wit bindgen generated code.
@@ -29,7 +25,7 @@ pub mod wit {
 
     wit_bindgen::generate!({
         world: "spin-sdk-kv",
-        path: "../../wit",
+        path: "wit",
         generate_all,
     });
 
@@ -50,7 +46,7 @@ pub use wit::key_value::Error;
 ///
 /// ```no_run
 /// # async fn run() -> anyhow::Result<()> {
-/// let store = spin_sdk_kv::Store::open_default().await?;
+/// let store = spin_sdk::key_value::Store::open_default().await?;
 /// store.set("message", "Hello world".as_bytes()).await?;
 /// # Ok(())
 /// # }
@@ -60,7 +56,7 @@ pub use wit::key_value::Error;
 ///
 /// ```no_run
 /// # async fn run() -> anyhow::Result<()> {
-/// let store = spin_sdk_kv::Store::open_default().await?;
+/// let store = spin_sdk::key_value::Store::open_default().await?;
 /// let message = store.get("message").await?;
 /// let response = message.unwrap_or_else(|| "not found".into());
 /// # Ok(())
@@ -71,8 +67,9 @@ pub use wit::key_value::Error;
 ///
 /// ```no_run
 /// # async fn run() -> anyhow::Result<()> {
-/// let store = spin_sdk_kv::Store::open("finance").await?;
-/// let (keys, result) = store.get_keys().await?;
+/// let store = spin_sdk::key_value::Store::open("finance").await?;
+/// let keys = store.get_keys().await;
+/// println!("{:?}", keys.collect().await?);
 /// # Ok(())
 /// # }
 /// ```
@@ -81,7 +78,7 @@ pub use wit::key_value::Error;
 ///
 /// ```no_run
 /// # async fn run() -> anyhow::Result<()> {
-/// let store = spin_sdk_kv::Store::open_default().await?;
+/// let store = spin_sdk::key_value::Store::open_default().await?;
 /// store.delete("message").await?;
 /// # Ok(())
 /// # }
@@ -138,13 +135,9 @@ impl Store {
     }
 
     /// Return a list of all the keys
-    pub async fn get_keys(
-        &self,
-    ) -> (
-        wit_bindgen::StreamReader<String>,
-        wit_bindgen::FutureReader<Result<(), Error>>,
-    ) {
-        self.0.get_keys().await
+    pub async fn get_keys(&self) -> Keys {
+        let (keys, result) = self.0.get_keys().await;
+        Keys { keys, result }
     }
 
     #[cfg(feature = "json")]
@@ -169,7 +162,7 @@ impl Store {
     ///     address: vec!["Wonderland Way".to_owned()],
     /// };
     ///
-    /// let store = spin_sdk_kv::Store::open_default().await?;
+    /// let store = spin_sdk::key_value::Store::open_default().await?;
     /// store.set_json(customer_id, &customer).await?;
     /// # Ok(())
     /// # }
@@ -203,7 +196,7 @@ impl Store {
     /// # async fn run() -> anyhow::Result<()> {
     /// let customer_id = "CR1234567";
     ///
-    /// let store = spin_sdk_kv::Store::open_default().await?;
+    /// let store = spin_sdk::key_value::Store::open_default().await?;
     /// let customer = store.get_json::<Customer>(customer_id).await?;
     /// # Ok(())
     /// # }
@@ -216,5 +209,65 @@ impl Store {
             return Ok(None);
         };
         Ok(serde_json::from_slice(&value)?)
+    }
+}
+
+/// A streaming list of keys from a key-value store.
+///
+/// Keys are returned as a stream, allowing you to process them incrementally
+/// without loading the entire key set into memory. Use [`Keys::next()`] to
+/// retrieve keys one at a time, or [`Keys::collect()`] to gather all keys
+/// into a `Vec`.
+///
+/// After consuming the stream, you _must_ check [`Keys::result()`] to
+/// determine whether the operation completed successfully.
+pub struct Keys {
+    keys: wit_bindgen::StreamReader<String>,
+    result: wit_bindgen::FutureReader<Result<(), Error>>,
+}
+
+impl Keys {
+    /// Gets the next key from the stream.
+    ///
+    /// Returns `None` when there are no more keys available. You _must_
+    /// await [`Keys::result()`] after the stream is exhausted to determine
+    /// if all keys were read successfully.
+    pub async fn next(&mut self) -> Option<String> {
+        self.keys.next().await
+    }
+
+    /// Whether the key listing completed successfully or with an error.
+    ///
+    /// This must be called after the stream has been fully consumed to check
+    /// for errors that may have occurred during streaming.
+    pub async fn result(self) -> Result<(), Error> {
+        self.result.await
+    }
+
+    /// Collects all keys into a `Vec`.
+    ///
+    /// This is a convenience method for when the key set is small enough to
+    /// fit in memory and you do not require streaming behaviour.
+    pub async fn collect(mut self) -> Result<Vec<String>, Error> {
+        let mut keys = vec![];
+        while let Some(key) = self.next().await {
+            keys.push(key);
+        }
+        self.result.await?;
+        Ok(keys)
+    }
+
+    /// Extracts the underlying Wasm Component Model stream and future.
+    #[allow(
+        clippy::type_complexity,
+        reason = "sorry clippy that's just what the inner bits are"
+    )]
+    pub fn into_inner(
+        self,
+    ) -> (
+        wit_bindgen::StreamReader<String>,
+        wit_bindgen::FutureReader<Result<(), Error>>,
+    ) {
+        (self.keys, self.result)
     }
 }

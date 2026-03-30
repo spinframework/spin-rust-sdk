@@ -1,58 +1,78 @@
 //! The Rust Spin SDK.
 //!
 //! This crate is the main entry point for building [Spin](https://spinframework.dev)
-//! components in Rust. It re-exports the individual SDK crates under
-//! a unified namespace so that most applications only need to depend
-//! on `spin-sdk`.
+//! components in Rust. Each capability is exposed as a feature-gated
+//! module. All features are enabled by default; disable `default-features`
+//! and pick only what you need to slim down compile times.
 //!
-//! # SDK layout
+//! # Modules
 //!
-//! The SDK is split into focused crates, each covering a single Spin
-//! capability. They can be used standalone or through the re-exports
-//! below.
-//!
-//! | Re-export | Crate | Purpose |
-//! |-----------|-------|---------|
-//! | [`http`] | `spin-sdk-http` | Incoming and outgoing HTTP requests |
-//! | [`key_value`] | `spin-sdk-kv` | Persistent key-value storage |
-//! | [`llm`] | `spin-sdk-llm` | Large-language-model inference |
-//! | [`mqtt`] | `spin-sdk-mqtt` | MQTT message publishing |
-//! | [`mysql`] | `spin-sdk-mysql` | MySQL database access |
-//! | [`pg`] | `spin-sdk-pg` | PostgreSQL database access |
-//! | [`redis`] | `spin-sdk-redis` | Redis storage and pub/sub |
-//! | [`sqlite`] | `spin-sdk-sqlite` | SQLite database access |
-//! | [`variables`] | `spin-sdk-variables` | Application variable lookup |
+//! | Module | Feature | Purpose |
+//! |--------|---------|---------|
+//! | [`http`] | `http` | Incoming and outgoing HTTP requests |
+//! | [`key_value`] | `key-value` | Persistent key-value storage |
+//! | [`llm`] | `llm` | Large-language-model inference |
+//! | [`mqtt`] | `mqtt` | MQTT message publishing |
+//! | [`mysql`] | `mysql` | MySQL database access |
+//! | [`pg`] | `pg` | PostgreSQL database access |
+//! | [`redis`] | `redis` | Redis storage and pub/sub |
+//! | [`sqlite`] | `sqlite` | SQLite database access |
+//! | [`variables`] | `variables` | Application variable lookup |
 //!
 //! The [`http_service`] and [`redis_subscriber`] attribute macros
-//! (from `spin-sdk-macro`) generate the boilerplate required to
-//! expose a component to the Spin runtime.
+//! generate the boilerplate required to expose a component to the
+//! Spin runtime.
 
 #![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-// #[cfg(test)]
-// mod test;
-
-/// Re-export Spin HTTP SDK
-pub use spin_sdk_http as http;
-/// Re-export SPIN KeyValue SDK
-pub use spin_sdk_kv as key_value;
-/// Re-export Spin LLM SDK
-pub use spin_sdk_llm as llm;
 /// Re-export entrypoint macros
 pub use spin_sdk_macro::{http_service, redis_subscriber};
-/// Re-export Spin Mqtt SDK
-pub use spin_sdk_mqtt as mqtt;
-/// Re-export Spin MySQL SDK
-pub use spin_sdk_mysql as mysql;
-/// Re-export Spin Postgres SDK
-pub use spin_sdk_pg as pg;
-/// Re-export Spin Redis SDK
-pub use spin_sdk_redis as redis;
-/// Re-export Spin SQLite SDK
-pub use spin_sdk_sqlite as sqlite;
-/// Re-export Spin Variables SDK
-pub use spin_sdk_variables as variables;
+
+/// Incoming and outgoing HTTP requests.
+#[cfg(feature = "http")]
+#[cfg_attr(docsrs, doc(cfg(feature = "http")))]
+pub mod http;
+
+/// Persistent key-value storage.
+#[cfg(feature = "key-value")]
+#[cfg_attr(docsrs, doc(cfg(feature = "key-value")))]
+pub mod key_value;
+
+/// Large-language-model inference.
+#[cfg(feature = "llm")]
+#[cfg_attr(docsrs, doc(cfg(feature = "llm")))]
+pub mod llm;
+
+/// MQTT message publishing.
+#[cfg(feature = "mqtt")]
+#[cfg_attr(docsrs, doc(cfg(feature = "mqtt")))]
+pub mod mqtt;
+
+/// MySQL database access.
+#[cfg(feature = "mysql")]
+#[cfg_attr(docsrs, doc(cfg(feature = "mysql")))]
+pub mod mysql;
+
+/// PostgreSQL database access.
+#[cfg(feature = "pg")]
+#[cfg_attr(docsrs, doc(cfg(feature = "pg")))]
+pub mod pg;
+
+/// Redis storage and pub/sub.
+#[cfg(feature = "redis")]
+#[cfg_attr(docsrs, doc(cfg(feature = "redis")))]
+pub mod redis;
+
+/// SQLite database access.
+#[cfg(feature = "sqlite")]
+#[cfg_attr(docsrs, doc(cfg(feature = "sqlite")))]
+pub mod sqlite;
+
+/// Application variable lookup.
+#[cfg(feature = "variables")]
+#[cfg_attr(docsrs, doc(cfg(feature = "variables")))]
+pub mod variables;
 
 #[export_name = concat!("spin-sdk-version-", env!("SDK_VERSION"))]
 extern "C" fn __spin_sdk_version() {}
@@ -68,13 +88,12 @@ extern "C" fn __spin_sdk_hash() {}
 pub use wit_bindgen;
 
 #[doc(hidden)]
-/// Various WASI APIs
 pub mod experimental {
     #![allow(missing_docs)]
 
     wit_bindgen::generate!({
-        world: "spin-sdk-wasi",
-        path: "../../wit",
+        world: "spin-sdk-experimental",
+        path: "wit",
         generate_all,
     });
 }

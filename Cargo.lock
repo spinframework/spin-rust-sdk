@@ -2313,54 +2313,28 @@ dependencies = [
 name = "spin-sdk"
 version = "5.2.0"
 dependencies = [
+ "anyhow",
+ "bytes",
+ "chrono",
+ "http 1.4.0",
+ "http-body 1.0.1",
  "http-body-util",
  "hyper 1.8.1",
+ "postgres_range",
  "reqwest",
- "spin-sdk-http",
- "spin-sdk-kv",
- "spin-sdk-llm",
+ "rust_decimal",
+ "serde",
+ "serde_json",
  "spin-sdk-macro",
- "spin-sdk-mqtt",
- "spin-sdk-mysql",
- "spin-sdk-pg",
- "spin-sdk-redis",
- "spin-sdk-sqlite",
- "spin-sdk-variables",
+ "thiserror 2.0.18",
  "tokio",
+ "uuid",
+ "wasip3 0.5.0+wasi-0.3.0-rc-2026-03-15",
  "wasmtime",
  "wasmtime-wasi",
  "wasmtime-wasi-http",
  "wit-bindgen 0.54.0",
  "wit-component 0.245.1",
-]
-
-[[package]]
-name = "spin-sdk-http"
-version = "5.2.0"
-dependencies = [
- "anyhow",
- "bytes",
- "http 1.4.0",
- "http-body 1.0.1",
- "http-body-util",
- "wasip3 0.5.0+wasi-0.3.0-rc-2026-03-15",
-]
-
-[[package]]
-name = "spin-sdk-kv"
-version = "5.2.0"
-dependencies = [
- "anyhow",
- "serde",
- "serde_json",
- "wit-bindgen 0.54.0",
-]
-
-[[package]]
-name = "spin-sdk-llm"
-version = "5.2.0"
-dependencies = [
- "wit-bindgen 0.54.0",
 ]
 
 [[package]]
@@ -2370,56 +2344,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "spin-sdk-mqtt"
-version = "5.2.0"
-dependencies = [
- "wit-bindgen 0.54.0",
-]
-
-[[package]]
-name = "spin-sdk-mysql"
-version = "5.2.0"
-dependencies = [
- "thiserror 2.0.18",
- "wit-bindgen 0.54.0",
-]
-
-[[package]]
-name = "spin-sdk-pg"
-version = "5.2.0"
-dependencies = [
- "chrono",
- "postgres_range",
- "rust_decimal",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "uuid",
- "wit-bindgen 0.54.0",
-]
-
-[[package]]
-name = "spin-sdk-redis"
-version = "5.2.0"
-dependencies = [
- "wit-bindgen 0.54.0",
-]
-
-[[package]]
-name = "spin-sdk-sqlite"
-version = "5.2.0"
-dependencies = [
- "wit-bindgen 0.54.0",
-]
-
-[[package]]
-name = "spin-sdk-variables"
-version = "5.2.0"
-dependencies = [
- "wit-bindgen 0.54.0",
 ]
 
 [[package]]

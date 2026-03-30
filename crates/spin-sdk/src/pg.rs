@@ -1,5 +1,3 @@
-//! The Rust Spin Postgres SDK.
-//!
 //! Postgres relational database storage.
 //!
 //! You can use the [`into()`](std::convert::Into) method to convert
@@ -31,8 +29,7 @@
 //! | lower/upper tuple       | range-decimal(...)                            | NUMERICRANGE                 |
 //! | `Vec<Option<...>>`      | array-int32(...), array-int64(...), array-str(...), array-decimal(...) | INT4[], INT8[], TEXT[], NUMERIC[] |
 //! | `pg4::Interval`         | interval(interval)                            | INTERVAL                     |
-#![deny(missing_docs)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
+
 // pg4 errors can be large, because they now include a breakdown of the PostgreSQL
 // error fields instead of just a string
 #![allow(clippy::result_large_err)]
@@ -48,7 +45,7 @@ pub mod wit {
 
     wit_bindgen::generate!({
         world: "spin-sdk-pg",
-        path: "../../wit",
+        path: "wit",
         generate_all,
     });
 
@@ -73,13 +70,13 @@ use chrono::{Datelike, Timelike};
 /// Load a set of rows from a local PostgreSQL database, and iterate over them.
 ///
 /// ```no_run
-/// use spin_sdk_pg::{Connection, Decode};
+/// use spin_sdk::pg::{Connection, Decode};
 ///
 /// # async fn run() -> anyhow::Result<()> {
 /// # let min_age = 0;
 /// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb").await?;
 ///
-/// let query_result = db.query(
+/// let mut query_result = db.query(
 ///     "SELECT * FROM users WHERE age >= $1",
 ///     &[min_age.into()]
 /// ).await?;
@@ -98,7 +95,7 @@ use chrono::{Datelike, Timelike};
 /// contains a single column, with a single row.
 ///
 /// ```no_run
-/// use spin_sdk_pg::{Connection, Decode};
+/// use spin_sdk::pg::{Connection, Decode};
 ///
 /// # async fn run() -> anyhow::Result<()> {
 /// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb").await?;
@@ -112,7 +109,7 @@ use chrono::{Datelike, Timelike};
 ///
 /// assert_eq!(1, rows.len());
 ///
-/// let count = i64::decode(rows[0][0])?;
+/// let count = rows[0][0];
 /// # Ok(())
 /// # }
 /// ```
@@ -121,7 +118,7 @@ use chrono::{Datelike, Timelike};
 /// instead of the `query` method.
 ///
 /// ```no_run
-/// use spin_sdk_pg::Connection;
+/// use spin_sdk::pg::Connection;
 ///
 /// # async fn run() -> anyhow::Result<()> {
 /// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb").await?;
@@ -341,7 +338,7 @@ impl Row {
     /// # Examples
     ///
     /// ```no_run
-    /// use spin_sdk_pg::{Connection, DbValue};
+    /// use spin_sdk::pg::{Connection, DbValue};
     ///
     /// # async fn run() -> anyhow::Result<()> {
     /// # let user_id = 0;

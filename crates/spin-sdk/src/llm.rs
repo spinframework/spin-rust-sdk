@@ -1,7 +1,3 @@
-//! The Rust Spin LLM SDK.
-#![deny(missing_docs)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
-
 #[doc(hidden)]
 /// Module containing wit bindgen generated code.
 ///
@@ -11,7 +7,7 @@ pub mod wit {
 
     wit_bindgen::generate!({
         world: "spin-sdk-llm",
-        path: "../../wit",
+        path: "wit",
         generate_all,
     });
 
@@ -32,7 +28,7 @@ pub use wit::llm;
 /// Generate embeddings using the all-minilm-l6-v2 LLM.
 ///
 /// ```no_run
-/// use spin_sdk_llm::{generate_embeddings, EmbeddingModel};
+/// use spin_sdk::llm::{generate_embeddings, EmbeddingModel};
 ///
 /// # fn run() -> anyhow::Result<()> {
 /// let text = &[
@@ -54,7 +50,7 @@ pub use wit::llm::EmbeddingsResult;
 /// # Examples
 ///
 /// ```no_run
-/// use spin_sdk_llm::{generate_embeddings, EmbeddingModel};
+/// use spin_sdk::llm::{generate_embeddings, EmbeddingModel};
 ///
 /// # fn run() -> anyhow::Result<()> {
 /// # let text = &[];

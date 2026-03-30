@@ -21,21 +21,42 @@ rustdoc-args = ["--cfg", "docsrs"]
 name = "spin_sdk"
 
 [features]
-default = ["export-sdk-language"]
+default = ["http", "key-value", "json", "llm", "mqtt", "mysql", "pg", "postgres4-types", "redis", "sqlite", "variables", "export-sdk-language"]
 export-sdk-language = []
+http = ["dep:wasip3", "dep:bytes", "dep:http-body", "dep:http-body-util", "dep:hyperium"]
+key-value = []
+json = ["dep:serde", "dep:serde_json"]
+llm = []
+mqtt = []
+mysql = []
+pg = ["dep:chrono"]
+postgres4-types = ["pg", "json", "dep:rust_decimal", "dep:uuid", "dep:postgres_range"]
+redis = []
+sqlite = []
+variables = []
 
 [dependencies]
-spin-sdk-http = { version = "5.1.1", path = "../spin-sdk-http" }
-spin-sdk-kv = { version = "5.1.1", path = "../spin-sdk-kv" }
-spin-sdk-llm = { version = "5.1.1", path = "../spin-sdk-llm" }
 spin-sdk-macro = { version = "5.1.1", path = "../spin-sdk-macro" }
-spin-sdk-mqtt = { version = "5.1.1", path = "../spin-sdk-mqtt" }
-spin-sdk-mysql = { version = "5.1.1", path = "../spin-sdk-mysql" }
-spin-sdk-pg = { version = "5.1.1", path = "../spin-sdk-pg" }
-spin-sdk-redis = { version = "5.1.1", path = "../spin-sdk-redis" }
-spin-sdk-sqlite = { version = "5.1.1", path = "../spin-sdk-sqlite" }
-spin-sdk-variables = { version = "5.1.1", path = "../spin-sdk-variables" }
-wit-bindgen = { workspace = true }
+wit-bindgen = "0.54"
+anyhow = "1"
+thiserror = "2.0.17"
+
+# http
+bytes = { version = "1.11.1", optional = true }
+http-body = { version = "1.0.1", optional = true }
+http-body-util = { version = "0.1.3", optional = true }
+hyperium = { package = "http", version = "1.3.1", optional = true }
+wasip3 = { version = "0.5.0", git = "https://github.com/bytecodealliance/wasi-rs", features = ["http-compat"], optional = true }
+
+# pg
+chrono = { version = "0.4.42", optional = true }
+postgres_range = { version = "0.11.1", optional = true }
+rust_decimal = { version = "1.39.0", default-features = false, optional = true }
+uuid = { version = "1.18.1", optional = true }
+
+# json
+serde = { version = "1.0.228", optional = true }
+serde_json = { version = "1.0.145", optional = true }
 
 [dev-dependencies]
 http-body-util = "0.1.3"

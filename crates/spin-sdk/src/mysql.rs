@@ -1,5 +1,3 @@
-//! The Spin MySQL SDK.
-//!
 //! MySQL relational database storage.
 //!
 //! You can use the [`Decode`] trait to convert a [`DbValue`] to a
@@ -22,8 +20,6 @@
 //! | `f64`     | floating64(float64) | DOUBLE                  |
 //! | `String`  | str(string)         | VARCHAR, CHAR, TEXT     |
 //! | `Vec<u8>` | binary(list\<u8\>)  | VARBINARY, BINARY, BLOB |
-#![deny(missing_docs)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[doc(hidden)]
 /// Module containing wit bindgen generated code.
@@ -34,7 +30,7 @@ pub mod wit {
 
     wit_bindgen::generate!({
         world: "spin-sdk-mysql",
-        path: "../../wit",
+        path: "wit",
         generate_all,
     });
 }
@@ -43,10 +39,10 @@ pub mod wit {
 ///
 /// # Examples
 ///
-/// Load a set of rows from a local PostgreSQL database, and iterate over them.
+/// Load a set of rows from a local MySQL database, and iterate over them.
 ///
 /// ```no_run
-/// use spin_sdk_mysql::{Connection, Decode, ParameterValue};
+/// use spin_sdk::mysql::{Connection, Decode, ParameterValue};
 ///
 /// # fn run() -> anyhow::Result<()> {
 /// # let min_age = 0;
@@ -71,7 +67,7 @@ pub mod wit {
 /// contains a single column, with a single row.
 ///
 /// ```no_run
-/// use spin_sdk_mysql::{Connection, Decode};
+/// use spin_sdk::mysql::{Connection, Decode};
 ///
 /// # fn run() -> anyhow::Result<()> {
 /// let db = Connection::open("mysql://root:my_password@localhost/mydb")?;
@@ -91,7 +87,7 @@ pub mod wit {
 /// instead of the `query` method.
 ///
 /// ```no_run
-/// use spin_sdk_mysql::{Connection, ParameterValue};
+/// use spin_sdk::mysql::{Connection, ParameterValue};
 ///
 /// # fn run() -> anyhow::Result<()> {
 /// let db = Connection::open("mysql://root:my_password@localhost/mydb")?;
@@ -110,13 +106,13 @@ pub use wit::fermyon::spin::mysql::Connection;
 ///
 /// # Examples
 ///
-/// Load a set of rows from a local PostgreSQL database, and iterate over them
+/// Load a set of rows from a local MySQL database, and iterate over them
 /// selecting one field from each. The columns collection allows you to find
 /// column indexes for column names; you can bypass this lookup if you name
 /// specific columns in the query.
 ///
 /// ```no_run
-/// use spin_sdk_mysql::{Connection, Decode, ParameterValue};
+/// use spin_sdk::mysql::{Connection, Decode, ParameterValue};
 ///
 /// # fn run() -> anyhow::Result<()> {
 /// # let min_age = 0;

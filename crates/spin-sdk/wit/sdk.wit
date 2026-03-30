@@ -32,7 +32,7 @@ world spin-sdk-variables {
     import spin:variables/variables@3.0.0;
 }
 
-world spin-sdk-wasi {
+world spin-sdk-experimental {
     import wasi:config/store@0.2.0-draft-2024-09-27;
     include wasi:keyvalue/imports@0.2.0-draft2;
     @unstable(feature = wasi-otel)
