@@ -56,7 +56,7 @@ pub mod wit {
 }
 
 #[doc(inline)]
-pub use wit::spin::postgres::postgres::{
+pub use wit::postgres::{
     Column, DbDataType, DbError, DbValue, Error as PgError, ParameterValue, QueryError,
     RangeBoundKind,
 };
@@ -319,7 +319,7 @@ impl QueryResult {
 /// The [DbValue] vector representation is obtained from the [QueryResult::rows()] function, and provides
 /// index-based lookup or low-level access to row values via a vector.
 pub struct Row {
-    columns: Arc<Vec<wit::spin::postgres::postgres::Column>>,
+    columns: Arc<Vec<wit::postgres::Column>>,
     result: Vec<DbValue>,
 }
 

@@ -65,16 +65,6 @@
 #![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-#[doc(inline)]
-pub use wit::variables::Error;
-
-/// Get an application variable value for the current component.
-///
-/// The name must match one defined in in the component manifest.
-pub async fn get(key: impl AsRef<str>) -> Result<String, Error> {
-    wit::variables::get(key.as_ref().to_string()).await
-}
-
 #[doc(hidden)]
 /// Module containing wit bindgen generated code.
 ///
@@ -89,4 +79,14 @@ pub mod wit {
     });
 
     pub use spin::variables::variables;
+}
+
+#[doc(inline)]
+pub use wit::variables::Error;
+
+/// Get an application variable value for the current component.
+///
+/// The name must match one defined in in the component manifest.
+pub async fn get(key: impl AsRef<str>) -> Result<String, Error> {
+    wit::variables::get(key.as_ref().to_string()).await
 }

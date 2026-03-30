@@ -25,6 +25,20 @@
 #![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+#[doc(hidden)]
+/// Module containing wit bindgen generated code.
+///
+/// This is only meant for internal consumption.
+pub mod wit {
+    #![allow(missing_docs)]
+
+    wit_bindgen::generate!({
+        world: "spin-sdk-mysql",
+        path: "../../wit",
+        generate_all,
+    });
+}
+
 /// An open connection to a MySQL database.
 ///
 /// # Examples
@@ -289,20 +303,6 @@ impl Decode for String {
 
 fn format_decode_err(types: &str, value: &DbValue) -> String {
     format!("Expected {} from the DB but got {:?}", types, value)
-}
-
-#[doc(hidden)]
-/// Module containing wit bindgen generated code.
-///
-/// This is only meant for internal consumption.
-pub mod wit {
-    #![allow(missing_docs)]
-
-    wit_bindgen::generate!({
-        world: "spin-sdk-mysql",
-        path: "../../wit",
-        generate_all,
-    });
 }
 
 #[cfg(test)]

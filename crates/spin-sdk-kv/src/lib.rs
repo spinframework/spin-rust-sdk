@@ -20,6 +20,22 @@
 #![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+#[doc(hidden)]
+/// Module containing wit bindgen generated code.
+///
+/// This is only meant for internal consumption.
+pub mod wit {
+    #![allow(missing_docs)]
+
+    wit_bindgen::generate!({
+        world: "spin-sdk-kv",
+        path: "../../wit",
+        generate_all,
+    });
+
+    pub use spin::key_value::key_value;
+}
+
 #[cfg(feature = "json")]
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -201,20 +217,4 @@ impl Store {
         };
         Ok(serde_json::from_slice(&value)?)
     }
-}
-
-#[doc(hidden)]
-/// Module containing wit bindgen generated code.
-///
-/// This is only meant for internal consumption.
-pub mod wit {
-    #![allow(missing_docs)]
-
-    wit_bindgen::generate!({
-        world: "spin-sdk-kv",
-        path: "../../wit",
-        generate_all,
-    });
-
-    pub use spin::key_value::key_value;
 }

@@ -33,6 +33,22 @@
 #![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+#[doc(hidden)]
+/// Module containing wit bindgen generated code.
+///
+/// This is only meant for internal consumption.
+pub mod wit {
+    #![allow(missing_docs)]
+
+    wit_bindgen::generate!({
+        world: "spin-sdk-mqtt",
+        path: "../../wit",
+        generate_all,
+    });
+
+    pub use spin::mqtt::mqtt;
+}
+
 /// An open connection to an MQTT queue.
 ///
 /// The address must be in URL form, and must include a `client_id`:
@@ -97,20 +113,4 @@ impl Connection {
             .publish(topic.as_ref().to_string(), payload, qos)
             .await
     }
-}
-
-#[doc(hidden)]
-/// Module containing wit bindgen generated code.
-///
-/// This is only meant for internal consumption.
-pub mod wit {
-    #![allow(missing_docs)]
-
-    wit_bindgen::generate!({
-        world: "spin-sdk-mqtt",
-        path: "../../wit",
-        generate_all,
-    });
-
-    pub use spin::mqtt::mqtt;
 }

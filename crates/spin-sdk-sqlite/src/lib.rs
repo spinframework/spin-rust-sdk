@@ -2,6 +2,22 @@
 #![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+#[doc(hidden)]
+/// Module containing wit bindgen generated code.
+///
+/// This is only meant for internal consumption.
+pub mod wit {
+    #![allow(missing_docs)]
+
+    wit_bindgen::generate!({
+        world: "spin-sdk-sqlite",
+        path: "../../wit",
+        generate_all,
+    });
+
+    pub use spin::sqlite::sqlite;
+}
+
 #[doc(inline)]
 pub use wit::sqlite::{Error, Value};
 
@@ -264,20 +280,4 @@ impl<'a> TryFrom<&'a Value> for &'a [u8] {
             _ => Err(()),
         }
     }
-}
-
-#[doc(hidden)]
-/// Module containing wit bindgen generated code.
-///
-/// This is only meant for internal consumption.
-pub mod wit {
-    #![allow(missing_docs)]
-
-    wit_bindgen::generate!({
-        world: "spin-sdk-sqlite",
-        path: "../../wit",
-        generate_all,
-    });
-
-    pub use spin::sqlite::sqlite;
 }

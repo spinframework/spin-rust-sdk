@@ -2,6 +2,22 @@
 #![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+#[doc(hidden)]
+/// Module containing wit bindgen generated code.
+///
+/// This is only meant for internal consumption.
+pub mod wit {
+    #![allow(missing_docs)]
+
+    wit_bindgen::generate!({
+        world: "spin-sdk-llm",
+        path: "../../wit",
+        generate_all,
+    });
+
+    pub use fermyon::spin::llm;
+}
+
 pub use wit::llm::{Error, InferencingParams, InferencingResult, InferencingUsage};
 
 /// Provides access to the underlying WIT interface. You should not normally need
@@ -120,20 +136,4 @@ pub fn generate_embeddings(
     text: &[String],
 ) -> Result<llm::EmbeddingsResult, Error> {
     llm::generate_embeddings(&model.to_string(), text)
-}
-
-#[doc(hidden)]
-/// Module containing wit bindgen generated code.
-///
-/// This is only meant for internal consumption.
-pub mod wit {
-    #![allow(missing_docs)]
-
-    wit_bindgen::generate!({
-        world: "spin-sdk-llm",
-        path: "../../wit",
-        generate_all,
-    });
-
-    pub use fermyon::spin::llm;
 }

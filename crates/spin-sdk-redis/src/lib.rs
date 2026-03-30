@@ -25,6 +25,22 @@
 #![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+#[doc(hidden)]
+/// Module containing wit bindgen generated code.
+///
+/// This is only meant for internal consumption.
+pub mod wit {
+    #![allow(missing_docs)]
+
+    wit_bindgen::generate!({
+        world: "spin-sdk-redis",
+        path: "../../wit",
+        generate_all,
+    });
+
+    pub use spin::redis::redis;
+}
+
 use std::hash::{Hash, Hasher};
 
 /// An open connection to a Redis server.
@@ -214,20 +230,4 @@ impl Hash for RedisResult {
             Binary(v) => v.hash(state),
         }
     }
-}
-
-#[doc(hidden)]
-/// Module containing wit bindgen generated code.
-///
-/// This is only meant for internal consumption.
-pub mod wit {
-    #![allow(missing_docs)]
-
-    wit_bindgen::generate!({
-        world: "spin-sdk-redis",
-        path: "../../wit",
-        generate_all,
-    });
-
-    pub use spin::redis::redis;
 }
