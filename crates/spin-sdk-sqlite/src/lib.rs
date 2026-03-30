@@ -33,7 +33,7 @@ pub use wit::sqlite::{Error, Value};
 ///
 /// ```no_run
 /// # async fn run() -> anyhow::Result<()> {
-/// use spin_sdk::sqlite::{Connection, Value};
+/// use spin_sdk_sqlite::{Connection, Value};
 ///
 /// let min_age = 0;
 /// let db = Connection::open_default().await?;
@@ -59,7 +59,7 @@ pub use wit::sqlite::{Error, Value};
 ///
 /// ```no_run
 /// # async fn run() -> anyhow::Result<()> {
-/// use spin_sdk::sqlite::Connection;
+/// use spin_sdk_sqlite::Connection;
 ///
 /// let db = Connection::open("customer-data").await?;
 /// let (_columns, mut rows, finish) = db.execute("SELECT COUNT(*) FROM users", []).await?;
@@ -79,7 +79,7 @@ pub use wit::sqlite::{Error, Value};
 ///
 /// ```no_run
 /// # async fn run() -> anyhow::Result<()> {
-/// use spin_sdk::sqlite::{Connection, Value};
+/// use spin_sdk_sqlite::{Connection, Value};
 ///
 /// let min_age = 18;
 /// let db = Connection::open("customer-data").await?;
@@ -158,7 +158,7 @@ impl Connection {
 ///
 /// ```no_run
 /// # async fn run() -> anyhow::Result<()> {
-/// use spin_sdk::sqlite::{Connection, Value};
+/// use spin_sdk_sqlite::{Connection, Value};
 ///
 /// let db = Connection::open_default().await?;
 /// let (columns, mut rows, finish) = db.execute(
@@ -196,7 +196,7 @@ impl RowResult {
     ///
     /// ```no_run
     /// # async fn run() -> anyhow::Result<()> {
-    /// use spin_sdk::sqlite::{Connection, Value};
+    /// use spin_sdk_sqlite::{Connection, Value};
     ///
     /// let db = Connection::open_default().await?;
     /// let (_columns, mut rows, finish) = db.execute(

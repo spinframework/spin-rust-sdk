@@ -14,10 +14,10 @@ const WIT_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/wit");
 /// ```ignore
 /// # use anyhow::Result;
 /// # use bytes::Bytes;
-/// # use spin_sdk::redis_component;
+/// # use spin_sdk::redis_subscriber;
 /// # use std::str::from_utf8;
-/// #[redis_component]
-/// fn on_message(message: Bytes) -> Result<()> {
+/// #[redis_subscriber]
+/// async fn on_message(message: Bytes) -> Result<()> {
 ///     println!("{}", from_utf8(&message)?);
 ///     Ok(())
 /// }
@@ -92,7 +92,8 @@ pub fn redis_subscriber(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// # Example
 ///
 /// ```ignore
-/// use spin_sdk::http_wasip3::{http_service, Request, IntoResponse};
+/// use spin_sdk::http::{,Request, IntoResponse};
+/// use spin_sdk::http_service;
 ///
 /// #[http_service]
 /// async fn my_handler(request: Request) -> impl IntoResponse {

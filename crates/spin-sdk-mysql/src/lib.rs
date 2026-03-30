@@ -46,9 +46,9 @@ pub mod wit {
 /// Load a set of rows from a local PostgreSQL database, and iterate over them.
 ///
 /// ```no_run
-/// use spin_sdk::mysql::{Connection, Decode, ParameterValue};
+/// use spin_sdk_mysql::{Connection, Decode, ParameterValue};
 ///
-/// # fn main() -> anyhow::Result<()> {
+/// # fn run() -> anyhow::Result<()> {
 /// # let min_age = 0;
 /// let db = Connection::open("mysql://root:my_password@localhost/mydb")?;
 ///
@@ -71,9 +71,9 @@ pub mod wit {
 /// contains a single column, with a single row.
 ///
 /// ```no_run
-/// use spin_sdk::mysql::{Connection, Decode};
+/// use spin_sdk_mysql::{Connection, Decode};
 ///
-/// # fn main() -> anyhow::Result<()> {
+/// # fn run() -> anyhow::Result<()> {
 /// let db = Connection::open("mysql://root:my_password@localhost/mydb")?;
 ///
 /// let query_result = db.query("SELECT COUNT(*) FROM users", &[])?;
@@ -91,9 +91,9 @@ pub mod wit {
 /// instead of the `query` method.
 ///
 /// ```no_run
-/// use spin_sdk::mysql::{Connection, ParameterValue};
+/// use spin_sdk_mysql::{Connection, ParameterValue};
 ///
-/// # fn main() -> anyhow::Result<()> {
+/// # fn run() -> anyhow::Result<()> {
 /// let db = Connection::open("mysql://root:my_password@localhost/mydb")?;
 ///
 /// let rows_affected = db.execute(
@@ -116,9 +116,9 @@ pub use wit::fermyon::spin::mysql::Connection;
 /// specific columns in the query.
 ///
 /// ```no_run
-/// use spin_sdk::mysql::{Connection, Decode, ParameterValue};
+/// use spin_sdk_mysql::{Connection, Decode, ParameterValue};
 ///
-/// # fn main() -> anyhow::Result<()> {
+/// # fn run() -> anyhow::Result<()> {
 /// # let min_age = 0;
 /// let db = Connection::open("mysql://root:my_password@localhost/mydb")?;
 ///

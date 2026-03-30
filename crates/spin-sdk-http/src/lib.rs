@@ -162,7 +162,7 @@ pub async fn send(request: impl IntoRequest) -> HttpResult<Response> {
 /// # Examples
 ///
 /// ```ignore
-/// use spin_wasip3_http::EmptyBody;
+/// use spin_sdk_http::EmptyBody;
 ///
 /// let empty = EmptyBody::new();
 /// let response = http::Response::builder()
@@ -183,7 +183,7 @@ pub type EmptyBody = http_body_util::Empty<bytes::Bytes>;
 /// # Examples
 ///
 /// ```ignore
-/// use spin_wasip3_http::FullBody;
+/// use spin_sdk_http::FullBody;
 /// use bytes::Bytes;
 ///
 /// let body = FullBody::new(Bytes::from("hello"));

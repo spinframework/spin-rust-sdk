@@ -9,9 +9,9 @@
 //! Get a value from the Redis database.
 //!
 //! ```no_run
-//! use spin_sdk::redis::Connection;
+//! use spin_sdk_redis::Connection;
 //!
-//! # async fn main() -> anyhow::Result<()> {
+//! # async fn run() -> anyhow::Result<()> {
 //! let conn = Connection::open("redis://127.0.0.1:6379").await?;
 //! let payload = conn.get("archimedes-data").await?;
 //! if let Some(data) = payload {
@@ -50,9 +50,9 @@ use std::hash::{Hash, Hasher};
 /// Get a value from the Redis database.
 ///
 /// ```no_run
-/// use spin_sdk::redis::Connection;
+/// use spin_sdk_redis::Connection;
 ///
-/// # async fn main() -> anyhow::Result<()> {
+/// # async fn run() -> anyhow::Result<()> {
 /// let conn = Connection::open("redis://127.0.0.1:6379").await?;
 /// let payload = conn.get("archimedes-data").await?;
 /// if let Some(data) = payload {
@@ -65,9 +65,9 @@ use std::hash::{Hash, Hasher};
 /// Set a value in the Redis database.
 ///
 /// ```no_run
-/// use spin_sdk::redis::Connection;
+/// use spin_sdk_redis::Connection;
 ///
-/// # async fn main() -> anyhow::Result<()> {
+/// # async fn run() -> anyhow::Result<()> {
 /// let conn = Connection::open("redis://127.0.0.1:6379").await?;
 /// let payload = "Eureka!".to_owned().into_bytes();
 /// conn.set("archimedes-data", &payload).await?;
@@ -78,9 +78,9 @@ use std::hash::{Hash, Hasher};
 /// Delete a value from the Redis database.
 ///
 /// ```no_run
-/// use spin_sdk::redis::Connection;
+/// use spin_sdk_redis::Connection;
 ///
-/// # async fn main() -> anyhow::Result<()> {
+/// # async fn run() -> anyhow::Result<()> {
 /// let conn = Connection::open("redis://127.0.0.1:6379").await?;
 /// conn.del(&["archimedes-data".to_owned()]).await?;
 /// # Ok(())
@@ -90,14 +90,12 @@ use std::hash::{Hash, Hasher};
 /// Publish a message to a Redis channel.
 ///
 /// ```no_run
-/// use spin_sdk::redis::Connection;
+/// use spin_sdk_redis::Connection;
 ///
-/// # fn ensure_pet_picture(_: &[u8]) -> anyhow::Result<()> { Ok(()) }
-/// # async fn use_redis(request: spin_sdk::http::Request) -> anyhow::Result<()> {
+/// # async fn run() -> anyhow::Result<()> {
 /// let conn = Connection::open("redis://127.0.0.1:6379").await?;
 ///
-/// let payload = request.body().to_vec();
-/// ensure_pet_picture(&payload)?;
+/// let payload = b"cute pet picture".to_vec();
 ///
 /// conn.publish("pet-pictures", &payload).await?;
 /// # Ok(())

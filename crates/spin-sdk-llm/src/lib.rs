@@ -32,14 +32,14 @@ pub use wit::llm;
 /// Generate embeddings using the all-minilm-l6-v2 LLM.
 ///
 /// ```no_run
-/// use spin_sdk::llm;
+/// use spin_sdk_llm::{generate_embeddings, EmbeddingModel};
 ///
-/// # fn main() -> anyhow::Result<()> {
+/// # fn run() -> anyhow::Result<()> {
 /// let text = &[
 ///     "I've just broken a priceless turnip".to_owned(),
 /// ];
 ///
-/// let embed_result = llm::generate_embeddings(llm::EmbeddingModel::AllMiniLmL6V2, text)?;
+/// let embed_result = generate_embeddings(EmbeddingModel::AllMiniLmL6V2, text)?;
 ///
 /// println!("prompt token count: {}", embed_result.usage.prompt_token_count);
 /// println!("embedding: {:?}", embed_result.embeddings.first());
@@ -54,11 +54,11 @@ pub use wit::llm::EmbeddingsResult;
 /// # Examples
 ///
 /// ```no_run
-/// use spin_sdk::llm;
+/// use spin_sdk_llm::{generate_embeddings, EmbeddingModel};
 ///
-/// # fn main() -> anyhow::Result<()> {
+/// # fn run() -> anyhow::Result<()> {
 /// # let text = &[];
-/// let embed_result = llm::generate_embeddings(llm::EmbeddingModel::AllMiniLmL6V2, text)?;
+/// let embed_result = generate_embeddings(EmbeddingModel::AllMiniLmL6V2, text)?;
 /// println!("prompt token count: {}", embed_result.usage.prompt_token_count);
 /// # Ok(())
 /// # }
@@ -70,7 +70,7 @@ pub use wit::llm::EmbeddingsUsage;
 #[derive(Debug, Clone, Copy)]
 pub enum InferencingModel<'a> {
     Llama2Chat,
-    CodellamaInstruct,
+    Codellarunstruct,
     Other(&'a str),
 }
 
@@ -78,7 +78,7 @@ impl std::fmt::Display for InferencingModel<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
             InferencingModel::Llama2Chat => "llama2-chat",
-            InferencingModel::CodellamaInstruct => "codellama-instruct",
+            InferencingModel::Codellarunstruct => "codellama-instruct",
             InferencingModel::Other(s) => s,
         };
         f.write_str(str)

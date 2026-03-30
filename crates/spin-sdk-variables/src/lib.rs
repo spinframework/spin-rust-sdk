@@ -12,8 +12,8 @@
 //! Get the value of a component variable.
 //!
 //! ```no_run
-//! # async fn main() -> anyhow::Result<()> {
-//! let region = spin_sdk::variables::get("region_id").await?;
+//! # async fn run() -> anyhow::Result<()> {
+//! let region = spin_sdk_variables::get("region_id").await?;
 //! let regional_url = format!("https://{region}.db.example.com");
 //! # Ok(())
 //! # }
@@ -22,39 +22,10 @@
 //! Fail gracefully if a variable is not set.
 //!
 //! ```no_run
-//! use spin_sdk::variables::Error;
+//! use spin_sdk_variables::Error;
 //!
-//! # async fn main() -> anyhow::Result<()> {
-//! let favourite = match spin_sdk::variables::get("favourite").await {
-//!     Ok(value) => value,
-//!     Err(Error::Undefined(_)) => "not playing favourites".to_owned(),
-//!     Err(e) => anyhow::bail!(e),
-//! };
-//! # Ok(())
-//! # }
-//! ```
-//!
-//! Get the value of a component variable.
-//!
-//! # Examples
-//!
-//! Get the value of a component variable.
-//!
-//! ```no_run
-//! # async fn main() -> anyhow::Result<()> {
-//! let region = spin_sdk::variables::get("region_id").await?;
-//! let regional_url = format!("https://{region}.db.example.com");
-//! # Ok(())
-//! # }
-//! ```
-//!
-//! Fail gracefully if a variable is not set.
-//!
-//! ```no_run
-//! use spin_sdk::variables::Error;
-//!
-//! # async fn main() -> anyhow::Result<()> {
-//! let favourite = match spin_sdk::variables::get("favourite").await {
+//! # async fn run() -> anyhow::Result<()> {
+//! let favourite = match spin_sdk_variables::get("favourite").await {
 //!     Ok(value) => value,
 //!     Err(Error::Undefined(_)) => "not playing favourites".to_owned(),
 //!     Err(e) => anyhow::bail!(e),

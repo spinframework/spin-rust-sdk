@@ -2326,7 +2326,6 @@ dependencies = [
  "spin-sdk-redis",
  "spin-sdk-sqlite",
  "spin-sdk-variables",
- "spin-sdk-wasi",
  "tokio",
  "wasmtime",
  "wasmtime-wasi",
@@ -2418,13 +2417,6 @@ dependencies = [
 
 [[package]]
 name = "spin-sdk-variables"
-version = "5.2.0"
-dependencies = [
- "wit-bindgen 0.54.0",
-]
-
-[[package]]
-name = "spin-sdk-wasi"
 version = "5.2.0"
 dependencies = [
  "wit-bindgen 0.54.0",

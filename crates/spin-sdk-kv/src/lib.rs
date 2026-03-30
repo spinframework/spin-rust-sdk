@@ -11,8 +11,8 @@
 //! Open the default store and set the 'message' key:
 //!
 //! ```no_run
-//! # async fn main() -> anyhow::Result<()> {
-//! let store = spin_sdk::key_value::Store::open_default().await?;
+//! # async fn run() -> anyhow::Result<()> {
+//! let store = spin_sdk_kv::Store::open_default().await?;
 //! store.set("message", "Hello world".as_bytes()).await?;
 //! # Ok(())
 //! # }
@@ -49,8 +49,8 @@ pub use wit::key_value::Error;
 /// Open the default store and set the 'message' key:
 ///
 /// ```no_run
-/// # async fn main() -> anyhow::Result<()> {
-/// let store = spin_sdk::key_value::Store::open_default().await?;
+/// # async fn run() -> anyhow::Result<()> {
+/// let store = spin_sdk_kv::Store::open_default().await?;
 /// store.set("message", "Hello world".as_bytes()).await?;
 /// # Ok(())
 /// # }
@@ -59,8 +59,8 @@ pub use wit::key_value::Error;
 /// Open the default store and get the 'message' key:
 ///
 /// ```no_run
-/// # async fn main() -> anyhow::Result<()> {
-/// let store = spin_sdk::key_value::Store::open_default().await?;
+/// # async fn run() -> anyhow::Result<()> {
+/// let store = spin_sdk_kv::Store::open_default().await?;
 /// let message = store.get("message").await?;
 /// let response = message.unwrap_or_else(|| "not found".into());
 /// # Ok(())
@@ -70,8 +70,8 @@ pub use wit::key_value::Error;
 /// Open a named store and list all the keys defined in it:
 ///
 /// ```no_run
-/// # async fn main() -> anyhow::Result<()> {
-/// let store = spin_sdk::key_value::Store::open("finance").await?;
+/// # async fn run() -> anyhow::Result<()> {
+/// let store = spin_sdk_kv::Store::open("finance").await?;
 /// let (keys, result) = store.get_keys().await?;
 /// # Ok(())
 /// # }
@@ -80,8 +80,8 @@ pub use wit::key_value::Error;
 /// Open the default store and delete the 'message' key:
 ///
 /// ```no_run
-/// # async fn main() -> anyhow::Result<()> {
-/// let store = spin_sdk::key_value::Store::open_default(),await?;
+/// # async fn run() -> anyhow::Result<()> {
+/// let store = spin_sdk_kv::Store::open_default().await?;
 /// store.delete("message").await?;
 /// # Ok(())
 /// # }
@@ -162,14 +162,14 @@ impl Store {
     ///     address: Vec<String>,
     /// }
     ///
-    /// # async fn main() -> anyhow::Result<()> {
+    /// # async fn run() -> anyhow::Result<()> {
     /// let customer_id = "CR1234567";
     /// let customer = Customer {
     ///     name: "Alice".to_owned(),
     ///     address: vec!["Wonderland Way".to_owned()],
     /// };
     ///
-    /// let store = spin_sdk::key_value::Store::open_default().await?;
+    /// let store = spin_sdk_kv::Store::open_default().await?;
     /// store.set_json(customer_id, &customer).await?;
     /// # Ok(())
     /// # }
@@ -200,10 +200,10 @@ impl Store {
     ///     address: Vec<String>,
     /// }
     ///
-    /// # async fn main() -> anyhow::Result<()> {
+    /// # async fn run() -> anyhow::Result<()> {
     /// let customer_id = "CR1234567";
     ///
-    /// let store = spin_sdk::key_value::Store::open_default().await?;
+    /// let store = spin_sdk_kv::Store::open_default().await?;
     /// let customer = store.get_json::<Customer>(customer_id).await?;
     /// # Ok(())
     /// # }

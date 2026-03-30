@@ -73,9 +73,9 @@ use chrono::{Datelike, Timelike};
 /// Load a set of rows from a local PostgreSQL database, and iterate over them.
 ///
 /// ```no_run
-/// use spin_sdk::pg4::{Connection, Decode};
+/// use spin_sdk_pg::{Connection, Decode};
 ///
-/// # async fn main() -> anyhow::Result<()> {
+/// # async fn run() -> anyhow::Result<()> {
 /// # let min_age = 0;
 /// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb").await?;
 ///
@@ -89,7 +89,7 @@ use chrono::{Datelike, Timelike};
 ///     println!("Found user {name}");
 /// }
 ///
-/// query_result,result().await?;
+/// query_result.result().await?;
 /// # Ok(())
 /// # }
 /// ```
@@ -98,9 +98,9 @@ use chrono::{Datelike, Timelike};
 /// contains a single column, with a single row.
 ///
 /// ```no_run
-/// use spin_sdk::pg4::{Connection, Decode};
+/// use spin_sdk_pg::{Connection, Decode};
 ///
-/// # async fn main() -> anyhow::Result<()> {
+/// # async fn run() -> anyhow::Result<()> {
 /// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb").await?;
 ///
 /// let query_result = db.query("SELECT COUNT(*) FROM users", &[]).await?;
@@ -121,9 +121,9 @@ use chrono::{Datelike, Timelike};
 /// instead of the `query` method.
 ///
 /// ```no_run
-/// use spin_sdk::pg4::Connection;
+/// use spin_sdk_pg::Connection;
 ///
-/// # async fn main() -> anyhow::Result<()> {
+/// # async fn run() -> anyhow::Result<()> {
 /// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb").await?;
 ///
 /// let rows_affected = db.execute(
@@ -341,16 +341,16 @@ impl Row {
     /// # Examples
     ///
     /// ```no_run
-    /// use spin_sdk::pg4::{Connection, DbValue};
+    /// use spin_sdk_pg::{Connection, DbValue};
     ///
-    /// # fn main() -> anyhow::Result<()> {
+    /// # async fn run() -> anyhow::Result<()> {
     /// # let user_id = 0;
-    /// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb")?;
-    /// let query_result = db.query(
+    /// let db = Connection::open("host=localhost user=postgres password=my_password dbname=mydb").await?;
+    /// let mut query_result = db.query(
     ///     "SELECT * FROM users WHERE id = $1",
     ///     &[user_id.into()]
-    /// )?;
-    /// let user_row = query_result.rows().next().unwrap();
+    /// ).await?;
+    /// let user_row = query_result.next().await.unwrap();
     ///
     /// let name = user_row.get::<String>("name").unwrap();
     /// let age = user_row.get::<i16>("age").unwrap();

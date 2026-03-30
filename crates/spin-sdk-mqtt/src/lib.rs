@@ -9,24 +9,19 @@
 //! Send an MQTT message.
 //!
 //! ```no_run
-//! use spin_sdk::mqtt::{Connection, Qos};
+//! use spin_sdk_mqtt::{Connection, Qos};
 //!
-//! # fn ensure_pet_picture(_: &[u8]) -> anyhow::Result<()> { Ok(()) }
-//! # async fn use_mqtt(request: spin_sdk::http::Request) -> anyhow::Result<()> {
-//! let user = spin_sdk::variables::get("mqtt_username").await?;
-//! let password = spin_sdk::variables::get("mqtt_password").await?;
-//!
+//! # async fn run() -> anyhow::Result<()> {
 //! let conn = Connection::open(
 //!     "mqtt://localhost:1883?client_id=123",
-//!     &user,
-//!     &password,
+//!     "user",
+//!     "password",
 //!     30 /* seconds */
 //! ).await?;
 //!
-//! let payload = request.body().to_vec();
-//! ensure_pet_picture(&payload)?;
+//! let payload = b"hello mqtt".to_vec();
 //!
-//! conn.publish("pet-pictures", &payload, Qos::AtLeastOnce).await?;
+//! conn.publish("pet-pictures", payload, Qos::AtLeastOnce).await?;
 //! # Ok(())
 //! # }
 //! ```
@@ -59,24 +54,19 @@ pub mod wit {
 /// Send an MQTT message.
 ///
 /// ```no_run
-/// use spin_sdk::mqtt::{Connection, Qos};
+/// use spin_sdk_mqtt::{Connection, Qos};
 ///
-/// # fn ensure_pet_picture(_: &[u8]) -> anyhow::Result<()> { Ok(()) }
-/// # async fn use_mqtt(request: spin_sdk::http::Request) -> anyhow::Result<()> {
-/// let user = spin_sdk::variables::get("mqtt_username").await?;
-/// let password = spin_sdk::variables::get("mqtt_password").await?;
-///
+/// # async fn run() -> anyhow::Result<()> {
 /// let conn = Connection::open(
 ///     "mqtt://localhost:1883?client_id=123",
-///     &user,
-///     &password,
+///     "user",
+///     "password",
 ///     30 /* seconds */
 /// ).await?;
 ///
-/// let payload = request.body().to_vec();
-/// ensure_pet_picture(&payload)?;
+/// let payload = b"hello mqtt".to_vec();
 ///
-/// conn.publish("pet-pictures", &payload, Qos::AtLeastOnce).await?;
+/// conn.publish("pet-pictures", payload, Qos::AtLeastOnce).await?;
 /// # Ok(())
 /// # }
 /// ```
