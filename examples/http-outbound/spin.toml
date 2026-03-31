@@ -18,12 +18,8 @@ component = "outbound-http-wildcard"
 route = "/outbound-to-hello-component"
 component = "outbound-http-to-same-app"
 
-[[trigger.http]]
-route = "/hello"
-component = "hello-component"
-
 [component.outbound-http]
-source = "../../target/wasm32-wasip1/release/http_rust_outbound_http.wasm"
+source = "../../target/wasm32-wasip2/release/http_rust_outbound_http.wasm"
 allowed_outbound_hosts = [
     "https://random-data-api.fermyon.app",
     "http://foo.com",
@@ -31,26 +27,19 @@ allowed_outbound_hosts = [
 ]
 [component.outbound-http.build]
 workdir = "outbound-http"
-command = "cargo build --target wasm32-wasip1 --release"
+command = "cargo build --target wasm32-wasip2 --release"
 
 [component.outbound-http-wildcard]
-source = "../../target/wasm32-wasip1/release/http_rust_outbound_http.wasm"
+source = "../../target/wasm32-wasip2/release/http_rust_outbound_http.wasm"
 allowed_outbound_hosts = ["https://*:*"]
 [component.outbound-http-wildcard.build]
 workdir = "outbound-http"
-command = "cargo build --target wasm32-wasip1 --release"
+command = "cargo build --target wasm32-wasip2 --release"
 
 [component.outbound-http-to-same-app]
-source = "../../target/wasm32-wasip1/release/outbound_http_to_same_app.wasm"
+source = "../../target/wasm32-wasip2/release/outbound_http_to_same_app.wasm"
 # To make outbound calls to components in the same Spin app, use the special value self.
 allowed_outbound_hosts = ["http://self"]
 [component.outbound-http-to-same-app.build]
 workdir = "outbound-http-to-same-app"
-command = "cargo build --target wasm32-wasip1 --release"
-
-[component.hello-component]
-source = "../../target/wasm32-wasip1/release/http_hello.wasm"
-description = "A simple component that returns hello."
-[component.hello-component.build]
-workdir = "http-hello"
-command = "cargo build --target wasm32-wasip1 --release"
+command = "cargo build --target wasm32-wasip2 --release"

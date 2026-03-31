@@ -1,0 +1,20 @@
+#:schema https://schemas.spinframework.dev/spin/manifest-v2/latest.json
+
+spin_manifest_version = 2
+
+[application]
+name = "streaming"
+version = "0.1.0"
+authors = ["The Spin authors"]
+description = "Demonstrates streaming processing of requests and responses"
+
+[[trigger.http]]
+route = "/..."
+component = "streaming"
+
+[component.streaming]
+source = "../../target/wasm32-wasip2/release/streaming.wasm"
+allowed_outbound_hosts = []
+[component.streaming.build]
+command = "cargo build --target wasm32-wasip2 --release"
+watch = ["src/**/*.rs", "Cargo.toml"]

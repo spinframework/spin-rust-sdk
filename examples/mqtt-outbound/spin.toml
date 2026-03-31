@@ -1,7 +1,7 @@
 spin_manifest_version = 2
 
 [application]
-authors = ["Suneet Nangia <suneet.nangia@gmail.com>"]
+authors = ["The Spin authors"]
 name = "rust-outbound-mqtt-example"
 version = "0.1.0"
 
@@ -12,7 +12,7 @@ component = "outbound-mqtt"
 [component.outbound-mqtt]
 # To test anonymous MQTT authentication, remove the values from MQTT_USERNAME and MQTT_PASSWORD env variables.
 environment = { MQTT_ADDRESS = "mqtt://127.0.0.1:1883?client_id=client001", MQTT_USERNAME = "user", MQTT_PASSWORD = "password", MQTT_KEEP_ALIVE_INTERVAL = "30", MQTT_TOPIC = "telemetry" }
-source = "../../target/wasm32-wasip1/release/rust_outbound_mqtt.wasm"
+source = "../../target/wasm32-wasip2/release/rust_outbound_mqtt.wasm"
 allowed_outbound_hosts = ["mqtt://127.0.0.1:1883"]
 [component.outbound-mqtt.build]
-command = "cargo build --target wasm32-wasip1 --release"
+command = "cargo build --target wasm32-wasip2 --release"

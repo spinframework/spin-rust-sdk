@@ -1,0 +1,75 @@
+[package]
+name = "spin-sdk"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage.workspace = true
+documentation = "https://docs.rs/spin-sdk"
+readme = "README.md"
+description = """
+The Spin Rust SDK makes it easy to build Spin components in Rust.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lib]
+name = "spin_sdk"
+
+[features]
+default = ["http", "key-value", "json", "llm", "mqtt", "mysql", "pg", "postgres4-types", "redis", "sqlite", "variables", "export-sdk-language"]
+export-sdk-language = []
+http = ["dep:wasip3", "dep:bytes", "dep:http-body", "dep:http-body-util", "dep:hyperium"]
+key-value = []
+json = ["dep:serde", "dep:serde_json"]
+llm = []
+mqtt = []
+mysql = []
+pg = ["dep:chrono"]
+postgres4-types = ["pg", "json", "dep:rust_decimal", "dep:uuid", "dep:postgres_range"]
+redis = []
+sqlite = []
+variables = []
+
+[dependencies]
+spin-sdk-macro = { version = "5.1.1", path = "../spin-sdk-macro" }
+wit-bindgen = "0.54"
+anyhow = "1"
+thiserror = "2.0.17"
+
+# http
+bytes = { version = "1.11.1", optional = true }
+http-body = { version = "1.0.1", optional = true }
+http-body-util = { version = "0.1.3", optional = true }
+hyperium = { package = "http", version = "1.3.1", optional = true }
+wasip3 = { version = "0.5.0", git = "https://github.com/bytecodealliance/wasi-rs", features = ["http-compat"], optional = true }
+
+# pg
+chrono = { version = "0.4.42", optional = true }
+postgres_range = { version = "0.11.1", optional = true }
+rust_decimal = { version = "1.39.0", default-features = false, optional = true }
+uuid = { version = "1.18.1", optional = true }
+
+# json
+serde = { version = "1.0.228", optional = true }
+serde_json = { version = "1.0.145", optional = true }
+
+[dev-dependencies]
+http-body-util = "0.1.3"
+hyper = "1.7.0"
+reqwest = "0.11.27"
+tokio = { version = "1.48.0", features = [
+  "fs",
+  "process",
+  "macros",
+  "rt-multi-thread",
+  "sync",
+] }
+wasmtime = { version = "43" }
+wasmtime-wasi = "43"
+wasmtime-wasi-http = "43"
+wit-component = "0.245"

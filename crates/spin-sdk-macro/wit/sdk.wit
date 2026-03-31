@@ -1,0 +1,5 @@
+package spin:sdk;
+
+world spin-sdk-macro-redis-trigger {
+    export spin:redis/inbound-redis@3.0.0;
+}
