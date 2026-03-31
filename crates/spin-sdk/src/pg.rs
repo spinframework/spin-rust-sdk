@@ -109,7 +109,7 @@ use chrono::{Datelike, Timelike};
 ///
 /// assert_eq!(1, rows.len());
 ///
-/// let count = rows[0][0];
+/// let count = &rows[0][0];
 /// # Ok(())
 /// # }
 /// ```
@@ -358,6 +358,14 @@ impl Row {
         let i = self.columns.iter().position(|c| c.name == column)?;
         let db_value = self.result.get(i)?;
         Decode::decode(db_value).ok()
+    }
+}
+
+impl std::ops::Index<usize> for Row {
+    type Output = DbValue;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.result[index]
     }
 }
 
