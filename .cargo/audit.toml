@@ -1,0 +1,4 @@
+[advisories]
+ignore = [
+    "RUSTSEC-2026-0049", # rustls-webpki 0.102.8 - transitive dep via wasmtime
+]
