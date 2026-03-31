@@ -8,6 +8,7 @@ pub use wasip3::{
 };
 
 use hyperium as http;
+pub use hyperium::{HeaderMap, HeaderName, HeaderValue, Method, StatusCode, Uri};
 use std::any::Any;
 use wasip3::{
     http::types,
@@ -114,6 +115,28 @@ impl From<types::Response> for Error {
     }
 }
 
+impl From<String> for Error {
+    fn from(s: String) -> Self {
+        Error::internal(s)
+    }
+}
+
+impl From<&'static str> for Error {
+    fn from(s: &'static str) -> Self {
+        Error::internal(s)
+    }
+}
+
+impl Error {
+    /// Creates an [`Error::Other`] from a displayable message.
+    ///
+    /// This is a convenience constructor for producing internal errors
+    /// without manually wrapping in [`Error::Other`].
+    pub fn internal(msg: impl Into<String>) -> Self {
+        anyhow::Error::msg(msg.into()).into()
+    }
+}
+
 impl<Ok: IntoResponse, Err: Into<Error>> IntoResponse for Result<Ok, Err> {
     fn into_response(self) -> HttpResult<types::Response> {
         match self {
@@ -148,6 +171,64 @@ pub async fn send(request: impl IntoRequest) -> HttpResult<Response> {
     let request = request.into_request()?;
     let response = wasip3::http::client::send(request).await?;
     Response::from_response(response)
+}
+
+/// Sends a GET request to the given URL.
+///
+/// This is a convenience wrapper around [`send`] that issues a GET request
+/// from the provided URL.
+///
+/// # Examples
+///
+/// ```ignore
+/// let resp = spin_sdk::http::get("https://example.com").await?;
+/// ```
+pub async fn get(url: impl AsRef<str>) -> HttpResult<Response> {
+    let request = http::Request::get(url.as_ref())
+        .body(EmptyBody::new())
+        .map_err(|_| types::ErrorCode::HttpRequestUriInvalid)?;
+    send(request).await
+}
+
+/// Sends a POST request with the given body.
+///
+/// The body can be any type that implements `Into<bytes::Bytes>`, such as
+/// `String`, `Vec<u8>`, `&'static str`, or `bytes::Bytes`.
+///
+/// # Examples
+///
+/// ```ignore
+/// let resp = spin_sdk::http::post("https://example.com/api", "hello").await?;
+/// ```
+pub async fn post(url: impl AsRef<str>, body: impl Into<bytes::Bytes>) -> HttpResult<Response> {
+    let request = http::Request::post(url.as_ref())
+        .body(FullBody::new(body.into()))
+        .map_err(|_| types::ErrorCode::HttpRequestUriInvalid)?;
+    send(request).await
+}
+
+/// Sends a PUT request with the given body.
+pub async fn put(url: impl AsRef<str>, body: impl Into<bytes::Bytes>) -> HttpResult<Response> {
+    let request = http::Request::put(url.as_ref())
+        .body(FullBody::new(body.into()))
+        .map_err(|_| types::ErrorCode::HttpRequestUriInvalid)?;
+    send(request).await
+}
+
+/// Sends a PATCH request with the given body.
+pub async fn patch(url: impl AsRef<str>, body: impl Into<bytes::Bytes>) -> HttpResult<Response> {
+    let request = http::Request::patch(url.as_ref())
+        .body(FullBody::new(body.into()))
+        .map_err(|_| types::ErrorCode::HttpRequestUriInvalid)?;
+    send(request).await
+}
+
+/// Sends a DELETE request to the given URL.
+pub async fn delete(url: impl AsRef<str>) -> HttpResult<Response> {
+    let request = http::Request::delete(url.as_ref())
+        .body(EmptyBody::new())
+        .map_err(|_| types::ErrorCode::HttpRequestUriInvalid)?;
+    send(request).await
 }
 
 /// A body type representing an empty payload.
@@ -271,6 +352,23 @@ where
     }
 }
 
+impl IntoRequest for &str {
+    /// Converts a URL string into a GET request with an empty body.
+    fn into_request(self) -> HttpResult<types::Request> {
+        http::Request::get(self)
+            .body(EmptyBody::new())
+            .map_err(|_| types::ErrorCode::HttpRequestUriInvalid)?
+            .into_request()
+    }
+}
+
+impl IntoRequest for String {
+    /// Converts a URL string into a GET request with an empty body.
+    fn into_request(self) -> HttpResult<types::Request> {
+        self.as_str().into_request()
+    }
+}
+
 /// A trait for constructing a value from a [`wasip3::http::types::Response`].
 ///
 /// This is the inverse of [`IntoResponse`], allowing higher-level response
@@ -356,6 +454,96 @@ where
 {
     fn into_response(self) -> HttpResult<types::Response> {
         http_into_wasi_response(self)
+    }
+}
+
+impl IntoResponse for () {
+    fn into_response(self) -> HttpResult<types::Response> {
+        http::StatusCode::OK.into_response()
+    }
+}
+
+impl IntoResponse for Vec<u8> {
+    fn into_response(self) -> HttpResult<types::Response> {
+        http::Response::new(FullBody::new(bytes::Bytes::from(self))).into_response()
+    }
+}
+
+impl IntoResponse for bytes::Bytes {
+    fn into_response(self) -> HttpResult<types::Response> {
+        http::Response::new(FullBody::new(self)).into_response()
+    }
+}
+
+impl<T> IntoResponse for (http::StatusCode, http::HeaderMap, T)
+where
+    T: http_body::Body + Any,
+    T::Data: Into<Vec<u8>>,
+    T::Error: Into<Box<dyn std::error::Error + Send + Sync + 'static>>,
+{
+    fn into_response(self) -> HttpResult<types::Response> {
+        let (status, headers, body) = self;
+        let mut resp = http::Response::builder().status(status).body(body).unwrap();
+        *resp.headers_mut() = headers;
+        resp.into_response()
+    }
+}
+
+/// A JSON wrapper for request and response bodies.
+///
+/// Wraps a value of type `T` and serializes it as JSON when used as a response,
+/// automatically setting the `Content-Type: application/json` header.
+///
+/// # Examples
+///
+/// ```ignore
+/// use spin_sdk::http::{Json, Request};
+/// use spin_sdk::http_service;
+/// use serde::Serialize;
+///
+/// #[derive(Serialize)]
+/// struct User { name: String }
+///
+/// #[http_service]
+/// async fn handler(_req: Request) -> Json<User> {
+///     Json(User { name: "Alice".into() })
+/// }
+/// ```
+#[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
+pub struct Json<T>(pub T);
+
+#[cfg(feature = "json")]
+impl<T: serde::Serialize> IntoResponse for Json<T> {
+    fn into_response(self) -> HttpResult<types::Response> {
+        let body = serde_json::to_vec(&self.0)
+            .map_err(|e| types::ErrorCode::InternalError(Some(e.to_string())))?;
+        let mut resp = http::Response::builder()
+            .status(http::StatusCode::OK)
+            .body(FullBody::new(bytes::Bytes::from(body)))
+            .unwrap();
+        resp.headers_mut().insert(
+            http::header::CONTENT_TYPE,
+            http::HeaderValue::from_static("application/json"),
+        );
+        resp.into_response()
+    }
+}
+
+#[cfg(feature = "json")]
+impl<T: serde::Serialize> IntoResponse for (http::StatusCode, Json<T>) {
+    fn into_response(self) -> HttpResult<types::Response> {
+        let body = serde_json::to_vec(&self.1 .0)
+            .map_err(|e| types::ErrorCode::InternalError(Some(e.to_string())))?;
+        let mut resp = http::Response::builder()
+            .status(self.0)
+            .body(FullBody::new(bytes::Bytes::from(body)))
+            .unwrap();
+        resp.headers_mut().insert(
+            http::header::CONTENT_TYPE,
+            http::HeaderValue::from_static("application/json"),
+        );
+        resp.into_response()
     }
 }
 
