@@ -34,19 +34,19 @@ pub use wit::sqlite::{Error, Value};
 /// let min_age = 0;
 /// let db = Connection::open_default().await?;
 ///
-/// let (columns, mut rows, finish) = db.execute(
+/// let mut query_result = db.execute(
 ///     "SELECT * FROM users WHERE age >= ?",
 ///     [Value::Integer(min_age)],
 /// ).await?;
 ///
-/// let name_idx = columns.iter().position(|c| c == "name").unwrap();
+/// let name_idx = query_result.columns().iter().position(|c| c == "name").unwrap();
 ///
-/// while let Some(row) = rows.next().await {
+/// while let Some(row) = query_result.next().await {
 ///     let name: &str = row.get(name_idx).unwrap();
 ///     println!("Found user {name}");
 /// }
 ///
-/// finish.await?;
+/// query_result.result().await?;
 /// # Ok(())
 /// # }
 /// ```
@@ -58,14 +58,14 @@ pub use wit::sqlite::{Error, Value};
 /// use spin_sdk::sqlite::Connection;
 ///
 /// let db = Connection::open("customer-data").await?;
-/// let (_columns, mut rows, finish) = db.execute("SELECT COUNT(*) FROM users", []).await?;
+/// let mut query_result = db.execute("SELECT COUNT(*) FROM users", []).await?;
 ///
-/// if let Some(row) = rows.next().await {
+/// if let Some(row) = query_result.next().await {
 ///     let count: i64 = row.get(0).unwrap();
 ///     println!("Total users: {count}");
 /// }
 ///
-/// finish.await?;
+/// query_result.result().await?;
 /// # Ok(())
 /// # }
 /// ```
@@ -79,12 +79,12 @@ pub use wit::sqlite::{Error, Value};
 ///
 /// let min_age = 18;
 /// let db = Connection::open("customer-data").await?;
-/// let (_columns, _rows, finish) = db.execute(
+/// let query_result = db.execute(
 ///     "DELETE FROM users WHERE age < ?",
 ///     [Value::Integer(min_age)],
 /// ).await?;
 ///
-/// finish.await?;
+/// query_result.result().await?;
 /// # Ok(())
 /// # }
 /// ```
@@ -112,20 +112,19 @@ impl Connection {
         &self,
         statement: impl AsRef<str>,
         parameters: impl IntoIterator<Item = Value>,
-    ) -> Result<
-        (
-            Vec<String>,
-            wit_bindgen::StreamReader<RowResult>,
-            wit_bindgen::FutureReader<Result<(), Error>>,
-        ),
-        Error,
-    > {
-        self.0
+    ) -> Result<QueryResult, Error> {
+        let (columns, rows, result) = self
+            .0
             .execute_async(
                 statement.as_ref().to_string(),
                 parameters.into_iter().collect(),
             )
-            .await
+            .await?;
+        Ok(QueryResult {
+            columns,
+            rows,
+            result,
+        })
     }
 
     /// The SQLite rowid of the most recent successful INSERT on the connection, or 0 if
@@ -138,6 +137,56 @@ impl Connection {
     /// INSERT, UPDATE or DELETE statement on the connection.
     pub async fn changes(&self) -> u64 {
         self.0.changes_async().await
+    }
+}
+
+/// The result of a [`Connection::execute`] operation.
+pub struct QueryResult {
+    columns: Vec<String>,
+    rows: wit_bindgen::StreamReader<RowResult>,
+    result: wit_bindgen::FutureReader<Result<(), Error>>,
+}
+
+impl QueryResult {
+    /// The columns in the query result.
+    pub fn columns(&self) -> &[String] {
+        &self.columns
+    }
+
+    /// Gets the next row in the result set.
+    ///
+    /// If this is `None`, there are no more rows available. You _must_
+    /// await [`QueryResult::result()`] to determine if all rows
+    /// were read successfully.
+    pub async fn next(&mut self) -> Option<RowResult> {
+        self.rows.next().await
+    }
+
+    /// Whether the query completed successfully or with an error.
+    pub async fn result(self) -> Result<(), Error> {
+        self.result.await
+    }
+
+    /// Collect all rows in the result set.
+    ///
+    /// This is provided for when the result set is small enough to fit in
+    /// memory and you do not require streaming behaviour.
+    pub async fn collect(self) -> Result<Vec<RowResult>, Error> {
+        let rows = self.rows.collect().await;
+        self.result.await?;
+        Ok(rows)
+    }
+
+    /// Extracts the underlying Wasm Component Model results of the query.
+    #[allow(clippy::type_complexity, reason = "that's what the inner bits are")]
+    pub fn into_inner(
+        self,
+    ) -> (
+        Vec<String>,
+        wit_bindgen::StreamReader<RowResult>,
+        wit_bindgen::FutureReader<Result<(), Error>>,
+    ) {
+        (self.columns, self.rows, self.result)
     }
 }
 
@@ -154,19 +203,19 @@ impl Connection {
 /// use spin_sdk::sqlite::{Connection, Value};
 ///
 /// let db = Connection::open_default().await?;
-/// let (columns, mut rows, finish) = db.execute(
+/// let mut query_result = db.execute(
 ///     "SELECT name, age FROM users WHERE age >= ?",
 ///     [Value::Integer(0)],
 /// ).await?;
 ///
-/// let name_idx = columns.iter().position(|c| c == "name").unwrap();
+/// let name_idx = query_result.columns().iter().position(|c| c == "name").unwrap();
 ///
-/// while let Some(row) = rows.next().await {
+/// while let Some(row) = query_result.next().await {
 ///     let name: &str = row.get(name_idx).unwrap();
 ///     println!("Found user {name}");
 /// }
 ///
-/// finish.await?;
+/// query_result.result().await?;
 /// # Ok(())
 /// # }
 /// ```
@@ -192,18 +241,18 @@ impl RowResult {
     /// use spin_sdk::sqlite::{Connection, Value};
     ///
     /// let db = Connection::open_default().await?;
-    /// let (_columns, mut rows, finish) = db.execute(
+    /// let mut query_result = db.execute(
     ///     "SELECT name, age FROM users WHERE id = ?",
     ///     [Value::Integer(0)],
     /// ).await?;
     ///
-    /// if let Some(row) = rows.next().await {
+    /// if let Some(row) = query_result.next().await {
     ///     let name: &str = row.get(0).unwrap();
     ///     let age: u16 = row.get(1).unwrap();
     ///     println!("{name} is {age} years old");
     /// }
     ///
-    /// finish.await?;
+    /// query_result.result().await?;
     /// # Ok(())
     /// # }
     /// ```
