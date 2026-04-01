@@ -10,6 +10,7 @@
 //! | Module | Feature | Purpose |
 //! |--------|---------|---------|
 //! | [`http`] | `http` | Incoming and outgoing HTTP requests |
+//! | [`grpc`] | `grpc` | gRPC helpers for tonic integration |
 //! | [`key_value`] | `key-value` | Persistent key-value storage |
 //! | [`llm`] | `llm` | Large-language-model inference |
 //! | [`mqtt`] | `mqtt` | MQTT message publishing |
@@ -33,6 +34,11 @@ pub use spin_sdk_macro::{http_service, redis_subscriber};
 #[cfg(feature = "http")]
 #[cfg_attr(docsrs, doc(cfg(feature = "http")))]
 pub mod http;
+
+/// gRPC helpers for serving tonic services.
+#[cfg(feature = "grpc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "grpc")))]
+pub mod grpc;
 
 /// Persistent key-value storage.
 #[cfg(feature = "key-value")]

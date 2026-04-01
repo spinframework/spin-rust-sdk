@@ -24,6 +24,7 @@ name = "spin_sdk"
 default = ["http", "key-value", "json", "llm", "mqtt", "mysql", "pg", "postgres4-types", "redis", "sqlite", "variables", "export-sdk-language"]
 export-sdk-language = []
 http = ["dep:bytes", "dep:http-body", "dep:http-body-util", "dep:hyperium"]
+grpc = ["http", "dep:tower-service"]
 key-value = []
 json = ["dep:serde", "dep:serde_json"]
 llm = []
@@ -46,6 +47,9 @@ bytes = { version = "1.11.1", optional = true }
 http-body = { version = "1.0.1", optional = true }
 http-body-util = { version = "0.1.3", optional = true }
 hyperium = { package = "http", version = "1.3.1", optional = true }
+
+# grpc
+tower-service = { version = "0.3", optional = true }
 
 # pg
 chrono = { version = "0.4.42", optional = true }
