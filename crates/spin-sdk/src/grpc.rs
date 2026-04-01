@@ -11,7 +11,6 @@
 //! ```ignore
 //! use spin_sdk::http::{IntoResponse, Request};
 //! use spin_sdk::http_service;
-//!
 //! #[http_service]
 //! async fn handler(req: Request) -> impl IntoResponse {
 //!     spin_sdk::grpc::serve(GreeterServer::new(MyGreeter), req).await
@@ -42,7 +41,6 @@ use std::convert::Infallible;
 /// ```ignore
 /// use spin_sdk::http::{IntoResponse, Request};
 /// use spin_sdk::{grpc, http_service};
-///
 /// #[http_service]
 /// async fn handler(req: Request) -> impl IntoResponse {
 ///     grpc::serve(GreeterServer::new(MyGreeter), req).await

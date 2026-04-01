@@ -8,9 +8,12 @@ mod proto {
 use proto::greeter_server::{Greeter, GreeterServer};
 use proto::{HelloReply, HelloRequest};
 
+use std::pin::Pin;
+
 struct MyGreeter;
 
-type ResponseStream = futures::stream::Iter<std::vec::IntoIter<Result<HelloReply, tonic::Status>>>;
+type ResponseStream =
+    Pin<Box<dyn futures::Stream<Item = Result<HelloReply, tonic::Status>> + Send>>;
 
 #[tonic::async_trait]
 impl Greeter for MyGreeter {
@@ -39,26 +42,15 @@ impl Greeter for MyGreeter {
     ) -> Result<tonic::Response<Self::SayHelloStreamStream>, tonic::Status> {
         let name = request.into_inner().name;
 
-        let greetings = vec![
-            Ok(HelloReply {
-                message: format!("Hello, {name}!"),
-            }),
-            Ok(HelloReply {
-                message: format!("Hola, {name}!"),
-            }),
-            Ok(HelloReply {
-                message: format!("Bonjour, {name}!"),
-            }),
-            Ok(HelloReply {
-                message: format!("Ciao, {name}!"),
-            }),
-            Ok(HelloReply {
-                message: format!("こんにちは, {name}!"),
-            }),
-        ];
+        let stream = async_stream::stream! {
+            for greeting in ["Hello", "Hola", "Bonjour", "Ciao", "こんにちは"] {
+                yield Ok(HelloReply {
+                    message: format!("{greeting}, {name}!"),
+                });
+            }
+        };
 
-        let stream = futures::stream::iter(greetings);
-        Ok(tonic::Response::new(stream))
+        Ok(tonic::Response::new(Box::pin(stream)))
     }
 }
 
