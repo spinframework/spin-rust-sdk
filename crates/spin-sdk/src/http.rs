@@ -1,11 +1,4 @@
-#[doc(hidden)]
-pub use wasip3;
-
-pub use wasip3::{
-    http_compat::{IncomingMessage, Request, Response},
-    wit_bindgen::{self, spawn},
-    wit_future, wit_stream,
-};
+pub use wasip3::http_compat::{IncomingMessage, Request, Response};
 
 use hyperium as http;
 pub use hyperium::{HeaderMap, HeaderName, HeaderValue, Method, StatusCode, Uri};

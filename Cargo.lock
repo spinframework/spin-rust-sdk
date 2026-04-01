@@ -2333,7 +2333,6 @@ dependencies = [
  "wasmtime",
  "wasmtime-wasi",
  "wasmtime-wasi-http",
- "wit-bindgen 0.54.0",
  "wit-component 0.245.1",
 ]
 
@@ -2862,7 +2861,7 @@ dependencies = [
 [[package]]
 name = "wasip3"
 version = "0.5.0+wasi-0.3.0-rc-2026-03-15"
-source = "git+https://github.com/bytecodealliance/wasi-rs#270004491d553c6d87a3d790ccd5a2eb788b4d89"
+source = "git+https://github.com/bytecodealliance/wasi-rs#9d39023643c64a34f420beb2bca0aae950e29591"
 dependencies = [
  "bytes",
  "http 1.4.0",
@@ -3773,7 +3772,6 @@ version = "0.54.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2bb00254d5051d69730ee32580b7373592f10ad786757c372f0f2c7b61f86a2c"
 dependencies = [
- "bitflags 2.11.0",
  "futures",
  "wit-bindgen-rust-macro 0.54.0",
 ]

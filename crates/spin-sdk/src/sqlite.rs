@@ -1,11 +1,15 @@
+use crate::wit_bindgen;
+
 #[doc(hidden)]
 /// Module containing wit bindgen generated code.
 ///
 /// This is only meant for internal consumption.
 pub mod wit {
     #![allow(missing_docs)]
+    use crate::wit_bindgen;
 
     wit_bindgen::generate!({
+        runtime_path: "crate::wit_bindgen::rt",
         world: "spin-sdk-sqlite",
         path: "wit",
         generate_all,

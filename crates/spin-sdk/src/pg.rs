@@ -34,6 +34,7 @@
 // error fields instead of just a string
 #![allow(clippy::result_large_err)]
 
+use crate::wit_bindgen;
 use std::sync::Arc;
 
 #[doc(hidden)]
@@ -42,8 +43,10 @@ use std::sync::Arc;
 /// This is only meant for internal consumption.
 pub mod wit {
     #![allow(missing_docs)]
+    use crate::wit_bindgen;
 
     wit_bindgen::generate!({
+        runtime_path: "crate::wit_bindgen::rt",
         world: "spin-sdk-pg",
         path: "wit",
         generate_all,
