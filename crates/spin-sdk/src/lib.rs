@@ -27,7 +27,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 /// Re-export entrypoint macros
-pub use spin_sdk_macro::{http_service, redis_subscriber};
+pub use spin_sdk_macro::{dependencies, http_service, redis_subscriber};
 
 /// Incoming and outgoing HTTP requests.
 #[cfg(feature = "http")]
