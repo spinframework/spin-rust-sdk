@@ -117,22 +117,22 @@ impl From<types::Response> for Error {
 
 impl From<String> for Error {
     fn from(s: String) -> Self {
-        Error::internal(s)
+        Error::other(s)
     }
 }
 
 impl From<&'static str> for Error {
     fn from(s: &'static str) -> Self {
-        Error::internal(s)
+        Error::other(s)
     }
 }
 
 impl Error {
     /// Creates an [`Error::Other`] from a displayable message.
     ///
-    /// This is a convenience constructor for producing internal errors
+    /// This is a convenience constructor for producing errors
     /// without manually wrapping in [`Error::Other`].
-    pub fn internal(msg: impl Into<String>) -> Self {
+    pub fn other(msg: impl Into<String>) -> Self {
         anyhow::Error::msg(msg.into()).into()
     }
 }
@@ -176,7 +176,7 @@ pub async fn send(request: impl IntoRequest) -> HttpResult<Response> {
 /// Sends a GET request to the given URL.
 ///
 /// This is a convenience wrapper around [`send`] that issues a GET request
-/// from the provided URL.
+/// to the provided URL.
 ///
 /// # Examples
 ///
@@ -352,23 +352,6 @@ where
     }
 }
 
-impl IntoRequest for &str {
-    /// Converts a URL string into a GET request with an empty body.
-    fn into_request(self) -> HttpResult<types::Request> {
-        http::Request::get(self)
-            .body(EmptyBody::new())
-            .map_err(|_| types::ErrorCode::HttpRequestUriInvalid)?
-            .into_request()
-    }
-}
-
-impl IntoRequest for String {
-    /// Converts a URL string into a GET request with an empty body.
-    fn into_request(self) -> HttpResult<types::Request> {
-        self.as_str().into_request()
-    }
-}
-
 /// A trait for constructing a value from a [`wasip3::http::types::Response`].
 ///
 /// This is the inverse of [`IntoResponse`], allowing higher-level response
@@ -463,6 +446,12 @@ impl IntoResponse for () {
     }
 }
 
+impl IntoResponse for &[u8] {
+    fn into_response(self) -> HttpResult<types::Response> {
+        self.to_vec().into_response()
+    }
+}
+
 impl IntoResponse for Vec<u8> {
     fn into_response(self) -> HttpResult<types::Response> {
         http::Response::new(FullBody::new(bytes::Bytes::from(self))).into_response()
@@ -505,7 +494,7 @@ where
 /// struct User { name: String }
 ///
 /// #[http_service]
-/// async fn handler(_req: Request) -> Json<User> {
+/// async fn handler(_req: Request) -> impl IntoResponse {
 ///     Json(User { name: "Alice".into() })
 /// }
 /// ```
