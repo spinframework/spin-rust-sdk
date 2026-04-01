@@ -58,24 +58,26 @@ async fn handler(req: Request) -> impl IntoResponse {
 
 ### Server-Streaming RPC
 
-The streaming RPC returns a `futures::stream::Iter` over a vec of replies.
+The streaming RPC uses `async_stream::stream!` to yield replies asynchronously.
 Tonic encodes each item as a length-prefixed gRPC frame and streams them
 on the HTTP response body:
 
 ```rust
-type SayHelloStreamStream = futures::stream::Iter<...>;
+type SayHelloStreamStream = Pin<Box<dyn Stream<Item = Result<HelloReply, tonic::Status>> + Send>>;
 
 async fn say_hello_stream(
     &self,
     request: tonic::Request<HelloRequest>,
 ) -> Result<tonic::Response<Self::SayHelloStreamStream>, tonic::Status> {
     let name = request.into_inner().name;
-    let greetings = vec![
-        Ok(HelloReply { message: format!("Hello, {name}!") }),
-        Ok(HelloReply { message: format!("Bonjour, {name}!") }),
-        // ...
-    ];
-    Ok(tonic::Response::new(futures::stream::iter(greetings)))
+    let stream = async_stream::stream! {
+        for greeting in ["Hello", "Hola", "Bonjour", "Ciao", "こんにちは"] {
+            yield Ok(HelloReply {
+                message: format!("{greeting}, {name}!"),
+            });
+        }
+    };
+    Ok(tonic::Response::new(Box::pin(stream)))
 }
 ```
 

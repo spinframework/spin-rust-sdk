@@ -7,6 +7,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
+async-stream = "0.3"
 futures = "0.3"
 prost = "0.13"
 spin-sdk = { path = "../../crates/spin-sdk", features = ["grpc"] }
