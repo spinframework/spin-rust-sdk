@@ -1,5 +1,4 @@
-use http::StatusCode;
-use spin_sdk::http::{IntoResponse, Request};
+use spin_sdk::http::{IntoResponse, Request, StatusCode};
 use spin_sdk::http_service;
 
 /// A simple Spin HTTP component.
