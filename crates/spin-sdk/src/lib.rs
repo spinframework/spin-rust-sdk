@@ -9,6 +9,7 @@
 //!
 //! | Module | Feature | Purpose |
 //! |--------|---------|---------|
+//! | [`grpc`] | `grpc` | gRPC helpers for tonic integration |
 //! | [`http`] | `http` | Incoming and outgoing HTTP requests |
 //! | [`key_value`] | `key-value` | Persistent key-value storage |
 //! | [`llm`] | `llm` | Large-language-model inference |
@@ -28,6 +29,11 @@
 
 /// Re-export entrypoint macros
 pub use spin_sdk_macro::{http_service, redis_subscriber};
+
+/// gRPC helpers for serving tonic services.
+#[cfg(feature = "grpc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "grpc")))]
+pub mod grpc;
 
 /// Incoming and outgoing HTTP requests.
 #[cfg(feature = "http")]
