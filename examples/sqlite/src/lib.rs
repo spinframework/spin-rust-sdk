@@ -31,13 +31,13 @@ async fn handle_request(req: Request) -> Result<impl IntoResponse> {
 async fn init_db() -> Result<http::Response<String>> {
     let db = Connection::open_default().await?;
 
-    let (_, _, finish) = db.execute(
+    let query_result = db.execute(
         "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL)",
         [],
     ).await?;
 
     // Await the completion future to ensure the statement finishes.
-    finish.await?;
+    query_result.result().await?;
 
     Ok(http::Response::builder()
         .status(http::StatusCode::OK)
@@ -58,14 +58,14 @@ async fn create_user(req: &Request) -> Result<http::Response<String>> {
 
     let db = Connection::open_default().await?;
 
-    let (_, _, finish) = db
+    let query_result = db
         .execute(
             "INSERT INTO users (name, email) VALUES (?, ?)",
             [Value::Text(name), Value::Text(email)],
         )
         .await?;
 
-    finish.await?;
+    query_result.result().await?;
 
     let rowid = db.last_insert_rowid().await;
 
@@ -78,19 +78,31 @@ async fn create_user(req: &Request) -> Result<http::Response<String>> {
 async fn list_users() -> Result<http::Response<String>> {
     let db = Connection::open_default().await?;
 
-    let (columns, mut rows, finish) = db
+    let mut query_result = db
         .execute("SELECT id, name, email FROM users ORDER BY id", [])
         .await?;
 
     // Resolve column indices once for efficient access.
-    let id_idx = columns.iter().position(|c| c == "id").unwrap();
-    let name_idx = columns.iter().position(|c| c == "name").unwrap();
-    let email_idx = columns.iter().position(|c| c == "email").unwrap();
+    let id_idx = query_result
+        .columns()
+        .iter()
+        .position(|c| c == "id")
+        .unwrap();
+    let name_idx = query_result
+        .columns()
+        .iter()
+        .position(|c| c == "name")
+        .unwrap();
+    let email_idx = query_result
+        .columns()
+        .iter()
+        .position(|c| c == "email")
+        .unwrap();
 
     let mut users = Vec::new();
 
     // Consume the row stream.
-    while let Some(row) = rows.next().await {
+    while let Some(row) = query_result.next().await {
         users.push(User {
             id: row.get::<i64>(id_idx).unwrap_or_default(),
             name: row.get::<&str>(name_idx).unwrap_or_default().to_owned(),
@@ -99,7 +111,7 @@ async fn list_users() -> Result<http::Response<String>> {
     }
 
     // Await completion to surface any errors.
-    finish.await?;
+    query_result.result().await?;
 
     let body = serde_json::to_string_pretty(&users)?;
 

@@ -248,11 +248,8 @@ impl Keys {
     ///
     /// This is a convenience method for when the key set is small enough to
     /// fit in memory and you do not require streaming behaviour.
-    pub async fn collect(mut self) -> Result<Vec<String>, Error> {
-        let mut keys = vec![];
-        while let Some(key) = self.next().await {
-            keys.push(key);
-        }
+    pub async fn collect(self) -> Result<Vec<String>, Error> {
+        let keys = self.keys.collect().await;
         self.result.await?;
         Ok(keys)
     }
