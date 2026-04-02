@@ -38,8 +38,10 @@
 /// This is only meant for internal consumption.
 pub mod wit {
     #![allow(missing_docs)]
+    use crate::wit_bindgen;
 
     wit_bindgen::generate!({
+        runtime_path: "crate::wit_bindgen::rt",
         world: "spin-sdk-variables",
         path: "wit",
         generate_all,

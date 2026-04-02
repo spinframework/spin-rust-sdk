@@ -84,14 +84,15 @@ extern "C" fn __spin_sdk_language() {}
 #[export_name = concat!("spin-sdk-commit-", env!("SDK_COMMIT"))]
 extern "C" fn __spin_sdk_hash() {}
 
-#[doc(hidden)]
-pub use wit_bindgen;
+pub use wasip3::{self, wit_bindgen};
 
 #[doc(hidden)]
 pub mod experimental {
     #![allow(missing_docs)]
+    use crate::wit_bindgen;
 
     wit_bindgen::generate!({
+        runtime_path: "crate::wit_bindgen::rt",
         world: "spin-sdk-experimental",
         path: "wit",
         generate_all,
