@@ -5,21 +5,6 @@
 //! module. All features are enabled by default; disable `default-features`
 //! and pick only what you need to slim down compile times.
 //!
-//! # Modules
-//!
-//! | Module | Feature | Purpose |
-//! |--------|---------|---------|
-//! | [`grpc`] | `grpc` | gRPC helpers for tonic integration |
-//! | [`http`] | `http` | Incoming and outgoing HTTP requests |
-//! | [`key_value`] | `key-value` | Persistent key-value storage |
-//! | [`llm`] | `llm` | Large-language-model inference |
-//! | [`mqtt`] | `mqtt` | MQTT message publishing |
-//! | [`mysql`] | `mysql` | MySQL database access |
-//! | [`pg`] | `pg` | PostgreSQL database access |
-//! | [`redis`] | `redis` | Redis storage and pub/sub |
-//! | [`sqlite`] | `sqlite` | SQLite database access |
-//! | [`variables`] | `variables` | Application variable lookup |
-//!
 //! The [`http_service`] and [`redis_subscriber`] attribute macros
 //! generate the boilerplate required to expose a component to the
 //! Spin runtime.
@@ -29,11 +14,6 @@
 
 /// Re-export entrypoint macros
 pub use spin_sdk_macro::{http_service, redis_subscriber};
-
-/// gRPC helpers for serving tonic services.
-#[cfg(feature = "grpc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "grpc")))]
-pub mod grpc;
 
 /// Incoming and outgoing HTTP requests.
 #[cfg(feature = "http")]

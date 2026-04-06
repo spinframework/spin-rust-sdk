@@ -1,4 +1,4 @@
-use spin_sdk::http::{IntoResponse, Request};
+use spin_sdk::http::{grpc, IntoResponse, Request};
 use spin_sdk::http_service;
 
 mod proto {
@@ -64,5 +64,5 @@ impl Greeter for MyGreeter {
 /// This example demonstrates both unary and server-streaming RPCs.
 #[http_service]
 async fn handler(req: Request) -> impl IntoResponse {
-    spin_sdk::grpc::serve(GreeterServer::new(MyGreeter), req).await
+    grpc::serve(GreeterServer::new(MyGreeter), req).await
 }

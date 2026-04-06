@@ -11,6 +11,11 @@ use wasip3::{
     },
 };
 
+/// gRPC helpers for serving tonic services.
+#[cfg(feature = "grpc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "grpc")))]
+pub mod grpc;
+
 /// A alias for [`std::result::Result`] that uses [`Error`] as the default error type.
 ///
 /// This allows functions throughout the crate to return `Result<T>`
