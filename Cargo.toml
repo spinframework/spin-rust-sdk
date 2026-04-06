@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+  "examples/grpc",
   "examples/hello-world",
   "examples/http-axum-router",
   "examples/http-concurrent-outbound-calls",
