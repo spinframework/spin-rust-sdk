@@ -140,3 +140,54 @@ pub fn http_service(_attr: TokenStream, item: TokenStream) -> TokenStream {
     )
     .into()
 }
+
+/// This macro generates code from a Spin components dependencies using wit-bindgen. During expansion the
+/// macro will check for existence of a `spin-dependencies.wit` in the developers project directory
+/// and if it is present (used to indicate the presence of dependencies in the manifest) will invoke
+/// wit-bindgen to generate the bindings.
+///
+/// ```ignore
+/// use spin_sdk::http::{Request, IntoResponse};
+/// use spin_sdk::http_service;
+///
+/// // Optionally generate dependencies if "spin-dependencies.wit" is present.
+/// spin_sdk::dependencies!();
+///
+/// #[http_service]
+/// async fn my_handler(request: Request) -> impl IntoResponse {
+///   // Your logic goes here
+/// }
+/// ```
+#[proc_macro]
+pub fn dependencies(item: TokenStream) -> TokenStream {
+    if !item.is_empty() {
+        return syn::Error::new(
+            proc_macro2::Span::call_site(),
+            "the `dependencies!` macro does not take any arguments",
+        )
+        .to_compile_error()
+        .into();
+    }
+
+    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set");
+    let wit_path = std::path::Path::new(&manifest_dir).join("spin-dependencies.wit");
+
+    if !wit_path.exists() {
+        return TokenStream::new();
+    }
+
+    let wit_path_str = wit_path.to_str().expect("path is not valid UTF-8");
+
+    quote!(
+        #[allow(missing_docs)]
+        mod __spin_dependencies {
+            ::spin_sdk::wit_bindgen::generate!({
+                path: #wit_path_str,
+                world: "root",
+                runtime_path: "::spin_sdk::wit_bindgen::rt",
+                generate_all,
+            });
+        }
+    )
+    .into()
+}
