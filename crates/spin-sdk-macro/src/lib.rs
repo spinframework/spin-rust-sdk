@@ -179,15 +179,12 @@ pub fn dependencies(item: TokenStream) -> TokenStream {
     let wit_path_str = wit_path.to_str().expect("path is not valid UTF-8");
 
     quote!(
-        #[allow(missing_docs)]
-        mod __spin_dependencies {
-            ::spin_sdk::wit_bindgen::generate!({
-                path: #wit_path_str,
-                world: "root",
-                runtime_path: "::spin_sdk::wit_bindgen::rt",
-                generate_all,
-            });
-        }
+        ::spin_sdk::wit_bindgen::generate!({
+            path: #wit_path_str,
+            world: "root",
+            runtime_path: "::spin_sdk::wit_bindgen::rt",
+            generate_all,
+        });
     )
     .into()
 }
