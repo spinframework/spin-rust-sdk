@@ -1,12 +1,9 @@
 use spin_sdk::http::body::IncomingBodyExt;
-use spin_sdk::http::{IntoResponse, Request};
+use spin_sdk::http::{body, IntoResponse, Request};
 use spin_sdk::http_service;
 
 use bytes::Bytes;
-use futures::{
-    channel::mpsc::{channel, Sender},
-    SinkExt, StreamExt,
-};
+use futures::{SinkExt, StreamExt};
 
 /// A streaming Spin HTTP component.
 ///
@@ -26,7 +23,7 @@ async fn handle_streaming(request: Request) -> impl IntoResponse {
     // channel. The function returns the sender side of the channel; the
     // receiver end becomes the body. So anything written to the sender
     // side will be sent out over the HTTP response.
-    let (mut tx, body) = bytes_stream_body();
+    let (mut tx, body) = body::stream::<Bytes>();
 
     // Use wasip3::spawn to allow the async block to keep running
     // after the handler returns.
@@ -48,23 +45,4 @@ async fn handle_streaming(request: Request) -> impl IntoResponse {
     // Return the streaming Response object. The async block continues
     // to stream data into the response body despite the function returning.
     http::Response::new(body)
-}
-
-// Helper function to create a streaming body.
-fn bytes_stream_body() -> (
-    Sender<bytes::Bytes>,
-    impl http_body::Body<Data = Bytes, Error = anyhow::Error>,
-) {
-    // The send and receive sides of a channel
-    let (tx, rx) = channel::<Bytes>(1024);
-    // The receive side is a stream, so we can use combinators like `map`
-    // to transform it into a form that the response plumbing is happy
-    // with. The app logic that writes to the stream doesn't need to see
-    // any of this.
-    let stm = rx.map(|value| Ok(http_body::Frame::data(value)));
-    // Construct a Body implementation over the stream.
-    let body = http_body_util::StreamBody::new(stm);
-    // Return the send side (so that app logic can write to the body) and the
-    // body (so it can be put in a Response!).
-    (tx, body)
 }
