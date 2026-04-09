@@ -1,0 +1,20 @@
+#:schema https://schemas.spinframework.dev/spin/manifest-v2/latest.json
+
+spin_manifest_version = 2
+
+[application]
+name = "sse"
+version = "0.1.0"
+authors = ["The Spin authors"]
+description = "Demonstrates server-sent events"
+
+[[trigger.http]]
+route = "/..."
+component = "sse"
+
+[component.sse]
+source = "../../target/wasm32-wasip2/release/sse.wasm"
+allowed_outbound_hosts = []
+[component.sse.build]
+command = "cargo build --target wasm32-wasip2 --release"
+watch = ["src/**/*.rs", "Cargo.toml"]

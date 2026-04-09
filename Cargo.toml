@@ -16,6 +16,7 @@ members = [
   "examples/postgres",
   "examples/redis",
   "examples/redis-outbound",
+  "examples/server-sent-events",
   "examples/sqlite",
   "examples/variables",
   # "test-cases/simple-http",
