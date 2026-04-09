@@ -1,0 +1,50 @@
+<html>
+    <body>
+        <p>SSE test page</p>
+        <p><button>Close the connection</button></p>
+        <p>
+            <ul id="list"></ul>
+        </p>
+    </body>
+
+<script>
+
+const button = document.querySelector('button');
+
+const evtSource = new EventSource("http://localhost:3000/sse", {
+  withCredentials: false,
+});
+
+evtSource.onmessage = (event) => {
+  const newElement = document.createElement("li");
+  const eventList = document.getElementById("list");
+
+  newElement.textContent = `message: ${event.data}`;
+  eventList.appendChild(newElement);
+};
+
+evtSource.addEventListener("ping", (event) => {
+  const newElement = document.createElement("li");
+  const eventList = document.getElementById("list");
+
+  newElement.textContent = `ping: ${event.data}`;
+  eventList.appendChild(newElement);
+});
+
+evtSource.onopen = function() {
+  console.log("Connection to server opened.");
+};
+evtSource.onerror = function() {
+  console.log("EventSource failed.");
+};
+
+button.onclick = function() {
+  console.log('Connection closed');
+  evtSource.close();
+};
+
+console.log("evt source running");
+
+</script>
+
+</html>
