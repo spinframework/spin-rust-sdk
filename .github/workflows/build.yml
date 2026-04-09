@@ -31,6 +31,7 @@ jobs:
           rustup toolchain install ${{ env.RUST_VERSION }} --component clippy --component rustfmt
           rustup default ${{ env.RUST_VERSION }}
           rustup target add wasm32-wasip1
+          rustup target add wasm32-wasip2
 
       - name: Lint
         shell: bash

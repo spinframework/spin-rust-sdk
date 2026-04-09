@@ -1,9 +1,9 @@
 use spin_sdk::{
-    http::{IntoResponse, Response},
-    http_component,
+    http::{IntoResponse, Request},
+    http_service,
 };
 
-#[http_component]
-fn hello_world(_req: http::Request<()>) -> anyhow::Result<impl IntoResponse> {
-    Ok(Response::new(200, "Hello, world!"))
+#[http_service]
+async fn hello_world(_req: Request) -> impl IntoResponse {
+    "Hello, world!"
 }
