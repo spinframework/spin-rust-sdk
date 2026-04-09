@@ -39,6 +39,7 @@ variables = []
 [dependencies]
 spin-sdk-macro = { version = "5.1.1", path = "../spin-sdk-macro" }
 anyhow = "1"
+futures = "0.3.31"
 thiserror = "2.0.17"
 wasip3 = { version = "0.5.0", git = "https://github.com/bytecodealliance/wasi-rs", features = ["http-compat", "wit-bindgen-macros"] }
 

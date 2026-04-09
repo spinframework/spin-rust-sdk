@@ -1,13 +1,9 @@
 use std::pin::pin;
 use std::time::{Duration, Instant};
 
-use bytes::Bytes;
-use futures::{
-    channel::mpsc::{channel, Sender},
-    SinkExt, StreamExt,
-};
+use futures::{channel::mpsc::Sender, SinkExt};
 use http::Request;
-use spin_sdk::http::{send, EmptyBody, IntoResponse};
+use spin_sdk::http::{body, send, EmptyBody, IntoResponse};
 use spin_sdk::http_service;
 
 // In this streaming scenario, the entry point is a shim
@@ -23,7 +19,7 @@ async fn handle_concurrent_outbound_http_calls(
     // channel. The function returns the sender side of the channel; the
     // receiver end becomes the body. So anything written to the sender
     // side will be sent out over the HTTP response.
-    let (tx, body) = bytes_stream_body();
+    let (tx, body) = body::stream();
 
     // Spawn a task to run the application logic and stream the results
     // to the client. `spawn` continues to run this future even after the
@@ -35,7 +31,7 @@ async fn handle_concurrent_outbound_http_calls(
 
 // This is the real body of the application! Here `tx` is the
 // sender through which we stream data to the client.
-async fn handle_concurrent_outbound_http_calls_impl(mut tx: Sender<Bytes>) {
+async fn handle_concurrent_outbound_http_calls_impl(mut tx: Sender<String>) {
     // Start two async tasks to make concurrent outbound requests.
     let spin = pin!(get_content_length("https://spinframework.dev"));
     let book = pin!(get_content_length(
@@ -51,14 +47,14 @@ async fn handle_concurrent_outbound_http_calls_impl(mut tx: Sender<Bytes>) {
 
     // Write the outcome of that first task to the response.
     let first_message = first_result.unwrap().as_message("first");
-    tx.send(Bytes::from(first_message)).await.unwrap();
+    tx.send(first_message).await.unwrap();
 
     // Await the second task...
     let second_result = second_fut.await;
 
     // ...and write its result to the response too.
     let second_message = second_result.unwrap().as_message("second");
-    tx.send(Bytes::from(second_message)).await.unwrap();
+    tx.send(second_message).await.unwrap();
 
     // The `tx` sender drops at the end of the function, which ends the
     // response stream: if you need to close it explicitly in order to
@@ -97,23 +93,4 @@ async fn get_content_length(url: &str) -> anyhow::Result<TaskResult> {
         time_taken,
         content_length,
     })
-}
-
-// Helper function to create a streaming body.
-fn bytes_stream_body() -> (
-    Sender<bytes::Bytes>,
-    impl http_body::Body<Data = Bytes, Error = anyhow::Error>,
-) {
-    // The send and receive sides of a channel
-    let (tx, rx) = channel::<Bytes>(1024);
-    // The receive side is a stream, so we can use combinators like `map`
-    // to transform it into a form that the response plumbing is happy
-    // with. The app logic that writes to the stream doesn't need to see
-    // any of this.
-    let stm = rx.map(|value| Ok(http_body::Frame::data(value)));
-    // Construct a Body implementation over the stream.
-    let body = http_body_util::StreamBody::new(stm);
-    // Return the send side (so that app logic can write to the body) and the
-    // body (so it can be put in a Response!).
-    (tx, body)
 }
