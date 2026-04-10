@@ -64,11 +64,6 @@ async fn run_sse_loop_impl(mut tx: Sender<String>) -> anyhow::Result<()> {
             }
         }
 
-        sleep(Duration::from_millis(1000 / PINGS_PER_SECOND)).await;
+        spin_sdk::time::sleep(Duration::from_millis(1000 / PINGS_PER_SECOND)).await;
     }
-}
-
-async fn sleep(duration: Duration) {
-    let duration_ns = duration.as_nanos().try_into().unwrap();
-    spin_sdk::wasip3::clocks::monotonic_clock::wait_for(duration_ns).await;
 }

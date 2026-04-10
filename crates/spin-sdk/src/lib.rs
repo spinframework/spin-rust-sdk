@@ -55,6 +55,9 @@ pub mod redis;
 #[cfg_attr(docsrs, doc(cfg(feature = "sqlite")))]
 pub mod sqlite;
 
+/// Time-related functions.
+pub mod time;
+
 /// Application variable lookup.
 #[cfg(feature = "variables")]
 #[cfg_attr(docsrs, doc(cfg(feature = "variables")))]
