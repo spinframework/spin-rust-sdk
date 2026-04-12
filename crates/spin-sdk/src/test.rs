@@ -1,19 +1,19 @@
-// wasmtime::component::bindgen!({
-//     path: "../../../spin/wit",
-//     world: "spin:up/redis-trigger@4.0.0",
-//     imports: {
-//         default: async,
-//     },
-//     exports: {
-//         default: async,
-//     }
-// });
+wasmtime::component::bindgen!({
+    path: "wit/deps/spin-redis@3.0.0",
+    inline: "package root:component; world redis-trigger { export spin:redis/inbound-redis@3.0.0; }",
+    imports: {
+        default: async,
+    },
+    exports: {
+        default: async,
+    }
+});
 
 use {
     anyhow::Result,
     http_body_util::BodyExt,
     std::sync::OnceLock,
-    tokio::{fs, process::Command, sync::OnceCell},
+    tokio::{fs, process::Command},
     wasmtime::{
         component::{Component, Linker, ResourceTable},
         Config, Engine, Store,
@@ -48,22 +48,16 @@ impl WasiView for Ctx {
 }
 
 async fn build_component(name: &str) -> Result<Vec<u8>> {
-    static BUILD: OnceCell<()> = OnceCell::const_new();
-
-    BUILD
-        .get_or_init(|| async {
-            assert!(
-                Command::new("cargo")
-                    .current_dir(format!("test-cases/{name}"))
-                    .args(["build", "--workspace", "--target", "wasm32-wasip2"])
-                    .status()
-                    .await
-                    .unwrap()
-                    .success(),
-                "cargo build failed"
-            );
-        })
-        .await;
+    assert!(
+        Command::new("cargo")
+            .current_dir(format!("test-cases/{name}"))
+            .args(["build", "--workspace", "--target", "wasm32-wasip2"])
+            .status()
+            .await
+            .unwrap()
+            .success(),
+        "cargo build failed"
+    );
 
     let out_file = format!(
         "test-cases/{name}/target/wasm32-wasip2/debug/{}.wasm",
@@ -141,19 +135,24 @@ async fn simple_http() -> Result<()> {
     Ok(())
 }
 
-// #[tokio::test]
-// async fn simple_redis() -> Result<()> {
-//     let component = Component::new(engine(), build_component("simple_redis").await?)?;
+#[tokio::test]
+async fn simple_redis() -> Result<()> {
+    let component = Component::new(engine(), build_component("simple-redis").await?)?;
 
-//     let (mut store, linker) = store_and_linker()?;
+    let (mut store, linker) = store_and_linker()?;
 
-//     let trigger = RedisTrigger::instantiate_async(&mut store, &component, &linker).await?;
+    let trigger = RedisTrigger::instantiate_async(&mut store, &component, &linker).await?;
 
-//     trigger
-//         .fermyon_spin_inbound_redis()
-//         .call_handle_message(&mut store, &b"foo".to_vec())
-//         .await?
-//         .map_err(|e| anyhow!("{e}"))?;
+    let result = store
+        .run_concurrent(async |accessor| {
+            trigger
+                .spin_redis_inbound_redis()
+                .call_handle_message(accessor, b"foo".to_vec())
+                .await
+        })
+        .await??;
 
-//     Ok(())
-// }
+    result.expect("redis trigger should have returned Ok");
+
+    Ok(())
+}
