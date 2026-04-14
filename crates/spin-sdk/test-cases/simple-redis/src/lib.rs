@@ -1,7 +1,7 @@
-use {anyhow::Result, bytes::Bytes, spin_sdk::redis_component, std::ops::Deref};
+use {anyhow::Result, spin_sdk::redis_subscriber};
 
-#[redis_component]
-fn on_message(message: Bytes) -> Result<()> {
-    assert_eq!(message.deref(), b"foo");
+#[redis_subscriber]
+async fn on_message(message: Vec<u8>) -> Result<()> {
+    assert_eq!(message, b"foo");
     Ok(())
 }

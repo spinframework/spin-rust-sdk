@@ -87,3 +87,6 @@ pub mod experimental {
         generate_all,
     });
 }
+
+#[cfg(test)]
+mod test;
