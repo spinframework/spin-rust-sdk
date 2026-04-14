@@ -24,9 +24,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "${{ env.RUST_VERSION }}"
-          targets:
-          - wasm32-wasip1
-          - wasm32-wasip2
+          targets: wasm32-wasip1,wasm32-wasip2
       - name: Install Spin
         uses: fermyon/actions/spin/setup@v1
       - name: Run build_examples.sh
