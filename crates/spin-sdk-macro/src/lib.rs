@@ -188,3 +188,56 @@ pub fn dependencies(item: TokenStream) -> TokenStream {
     )
     .into()
 }
+
+/// The entrypoint to a Spin CLI command component.
+///
+/// The component targets the `wasi:cli/command` world. The annotated function
+/// must be `async` and return a `Result<(), E>` where `E: Display`.
+///
+/// # Example
+///
+/// ```ignore
+/// use anyhow::Result;
+/// use spin_sdk::main;
+///
+/// #[main]
+/// async fn main() -> Result<()> {
+///     println!("Hello, WASI!");
+///     Ok(())
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn main(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let func = syn::parse_macro_input!(item as syn::ItemFn);
+    let func_name = &func.sig.ident;
+
+    if func.sig.asyncness.is_none() {
+        return syn::Error::new_spanned(
+            func.sig.fn_token,
+            "the `#[main]` function must be `async`",
+        )
+        .to_compile_error()
+        .into();
+    }
+
+    quote!(
+        #func
+        mod __spin_cli_command {
+            struct Spin;
+            ::spin_sdk::wasip3::cli::command::export!(Spin);
+
+            impl ::spin_sdk::wasip3::exports::cli::run::Guest for self::Spin {
+                async fn run() -> Result<(), ()> {
+                    match super::#func_name().await {
+                        Ok(()) => Ok(()),
+                        Err(e) => {
+                            eprintln!("{e}");
+                            Err(())
+                        }
+                    }
+                }
+            }
+        }
+    )
+    .into()
+}
