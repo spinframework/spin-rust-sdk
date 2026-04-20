@@ -1,5 +1,5 @@
 [package]
-name = "spin-sdk-macro"
+name = "spin-macro"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -12,7 +12,7 @@ Rust procedural macros for Spin and WASIp3
 """
 
 [lib]
-name = "spin_sdk_macro"
+name = "spin_macro"
 proc-macro = true
 
 [dependencies]

@@ -37,7 +37,7 @@ sqlite = []
 variables = []
 
 [dependencies]
-spin-sdk-macro = { version = "6.0.0", path = "../spin-sdk-macro" }
+spin-macro = { version = "6.0.0", path = "../spin-sdk-macro" }
 anyhow = "1"
 futures = "0.3.31"
 thiserror = "2.0.17"

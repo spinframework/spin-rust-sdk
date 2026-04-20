@@ -27,13 +27,13 @@ jobs:
         id: auth    
 
       - name: Publish spin-macro to crates.io
-        working-directory: ./crates/macro
+        working-directory: ./crates/spin-sdk-macro
         run: cargo publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
       - name: Publish spin-sdk to crates.io
-        working-directory: ./
+        working-directory: ./crates/spin-sdk
         run: cargo publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
