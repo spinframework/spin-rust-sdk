@@ -41,7 +41,7 @@ spin-macro = { version = "6.0.0", path = "../spin-sdk-macro" }
 anyhow = "1"
 futures = "0.3.31"
 thiserror = "2.0.17"
-wasip3 = { version = "0.5.0", git = "https://github.com/bytecodealliance/wasi-rs", features = ["http-compat", "wit-bindgen-macros"] }
+wasip3 = { version = "0.6.0", git = "https://github.com/bytecodealliance/wasi-rs", features = ["http-compat", "wit-bindgen-macros"] }
 
 # http
 bytes = { version = "1.11.1", optional = true }
