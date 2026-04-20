@@ -2722,7 +2722,8 @@ dependencies = [
 [[package]]
 name = "wasip3"
 version = "0.6.0+wasi-0.3.0-rc-2026-03-15"
-source = "git+https://github.com/bytecodealliance/wasi-rs#660ee064e2ce7fa2de480cddbf0ab426520447fa"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed83456dd6a0b8581998c0365e4651fa2997e5093b49243b7f35391afaa7a3d9"
 dependencies = [
  "bytes",
  "http",
