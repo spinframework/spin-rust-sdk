@@ -19,14 +19,12 @@ members = [
   "examples/server-sent-events",
   "examples/sqlite",
   "examples/variables",
-  # "test-cases/simple-http",
-  # "test-cases/simple-redis",
   "crates/spin-sdk",
   "crates/spin-sdk-macro",
 ]
 
 [workspace.package]
-version = "5.2.0"
+version = "6.0.0"
 authors = ["Spin Framework Maintainers <cncf-spin-maintainers@lists.cncf.io>"]
 edition = "2021"
 license = "Apache-2.0 WITH LLVM-exception"

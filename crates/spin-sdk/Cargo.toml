@@ -37,7 +37,7 @@ sqlite = []
 variables = []
 
 [dependencies]
-spin-sdk-macro = { version = "5.1.1", path = "../spin-sdk-macro" }
+spin-sdk-macro = { version = "6.0.0", path = "../spin-sdk-macro" }
 anyhow = "1"
 futures = "0.3.31"
 thiserror = "2.0.17"
@@ -72,7 +72,7 @@ tokio = { version = "1.48.0", features = [
   "rt-multi-thread",
   "sync",
 ] }
-wasmtime = { version = "43.0.1" }
-wasmtime-wasi = "43.0.1"
-wasmtime-wasi-http = { version = "43.0.1", features = ["p3"] }
-wit-component = "0.245"
+wasmtime = { version = "44.0.0" }
+wasmtime-wasi = "44.0.0"
+wasmtime-wasi-http = { version = "44.0.0", features = ["p3"] }
+wit-component = "0.247"
