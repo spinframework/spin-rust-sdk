@@ -2150,6 +2150,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "spin-macro"
+version = "6.0.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "spin-redis"
 version = "0.1.0"
 dependencies = [
@@ -2174,7 +2183,7 @@ dependencies = [
  "rust_decimal",
  "serde",
  "serde_json",
- "spin-sdk-macro",
+ "spin-macro",
  "thiserror 2.0.18",
  "tokio",
  "tower-service",
@@ -2184,15 +2193,6 @@ dependencies = [
  "wasmtime-wasi",
  "wasmtime-wasi-http",
  "wit-component 0.247.0",
-]
-
-[[package]]
-name = "spin-sdk-macro"
-version = "6.0.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]
