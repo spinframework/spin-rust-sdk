@@ -7,8 +7,8 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 homepage.workspace = true
+readme.workspace = true
 documentation = "https://docs.rs/spin-sdk"
-readme = "README.md"
 description = """
 The Spin Rust SDK makes it easy to build Spin components in Rust.
 """
