@@ -15,11 +15,11 @@ use {
     std::sync::OnceLock,
     tokio::{fs, process::Command},
     wasmtime::{
-        component::{Component, Linker, ResourceTable},
         Config, Engine, Store,
+        component::{Component, Linker, ResourceTable},
     },
     wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView},
-    wasmtime_wasi_http::{p3::WasiHttpView, WasiHttpCtx},
+    wasmtime_wasi_http::{WasiHttpCtx, p3::WasiHttpView},
 };
 
 struct Ctx {

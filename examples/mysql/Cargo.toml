@@ -3,7 +3,7 @@ name = "rust-outbound-mysql"
 authors = ["The Spin authors"]
 description = "Demo of calling MySQL from a Spin application"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [lib]
 crate-type = ["cdylib"]

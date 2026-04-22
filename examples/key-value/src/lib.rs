@@ -1,5 +1,5 @@
 use bytes::Bytes;
-use spin_sdk::http::{body::IncomingBodyExt, EmptyBody, FullBody, IntoResponse, Request};
+use spin_sdk::http::{EmptyBody, FullBody, IntoResponse, Request, body::IncomingBodyExt};
 use spin_sdk::http_service;
 use spin_sdk::key_value::Store;
 

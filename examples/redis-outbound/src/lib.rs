@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use spin_sdk::http::{IntoResponse, Request};
 use spin_sdk::http_service;
 use spin_sdk::redis;

@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use anyhow::Result;
 use futures::SinkExt;
-use spin_sdk::http::{body, IntoResponse, Request};
+use spin_sdk::http::{IntoResponse, Request, body};
 use spin_sdk::{http_service, pg};
 
 // The environment variable set in `spin.toml` that points to the

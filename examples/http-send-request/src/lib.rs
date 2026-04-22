@@ -1,4 +1,4 @@
-use spin_sdk::http::{send, EmptyBody, IntoResponse, Request, Result};
+use spin_sdk::http::{EmptyBody, IntoResponse, Request, Result, send};
 use spin_sdk::http_service;
 
 /// Sends a request to a URL.

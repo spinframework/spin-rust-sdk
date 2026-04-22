@@ -393,8 +393,10 @@ mod tests {
         );
 
         assert!(String::decode(&DbValue::Int32(0)).is_err());
-        assert!(Option::<String>::decode(&DbValue::DbNull)
-            .unwrap()
-            .is_none());
+        assert!(
+            Option::<String>::decode(&DbValue::DbNull)
+                .unwrap()
+                .is_none()
+        );
     }
 }

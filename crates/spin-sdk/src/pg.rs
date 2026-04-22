@@ -1066,18 +1066,22 @@ mod tests {
         );
 
         assert!(String::decode(&DbValue::Int32(0)).is_err());
-        assert!(Option::<String>::decode(&DbValue::DbNull)
-            .unwrap()
-            .is_none());
+        assert!(
+            Option::<String>::decode(&DbValue::DbNull)
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]
     fn binary() {
         assert!(Vec::<u8>::decode(&DbValue::Binary(vec![0, 0])).is_ok());
         assert!(Vec::<u8>::decode(&DbValue::Boolean(false)).is_err());
-        assert!(Option::<Vec<u8>>::decode(&DbValue::DbNull)
-            .unwrap()
-            .is_none());
+        assert!(
+            Option::<Vec<u8>>::decode(&DbValue::DbNull)
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]
@@ -1090,9 +1094,11 @@ mod tests {
             chrono::NaiveDate::decode(&DbValue::Date((1, 2, 4))).unwrap(),
             chrono::NaiveDate::from_ymd_opt(1, 2, 5).unwrap()
         );
-        assert!(Option::<chrono::NaiveDate>::decode(&DbValue::DbNull)
-            .unwrap()
-            .is_none());
+        assert!(
+            Option::<chrono::NaiveDate>::decode(&DbValue::DbNull)
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]
@@ -1105,9 +1111,11 @@ mod tests {
             chrono::NaiveTime::decode(&DbValue::Time((1, 2, 3, 4))).unwrap(),
             chrono::NaiveTime::from_hms_nano_opt(1, 2, 4, 5).unwrap()
         );
-        assert!(Option::<chrono::NaiveTime>::decode(&DbValue::DbNull)
-            .unwrap()
-            .is_none());
+        assert!(
+            Option::<chrono::NaiveTime>::decode(&DbValue::DbNull)
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]
@@ -1124,9 +1132,11 @@ mod tests {
             NaiveDateTime::decode(&DbValue::Datetime((1, 2, 3, 4, 5, 6, 7))).unwrap(),
             chrono::NaiveDateTime::new(date, time)
         );
-        assert!(Option::<chrono::NaiveDateTime>::decode(&DbValue::DbNull)
-            .unwrap()
-            .is_none());
+        assert!(
+            Option::<chrono::NaiveDateTime>::decode(&DbValue::DbNull)
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]
@@ -1139,9 +1149,11 @@ mod tests {
             chrono::Duration::decode(&DbValue::Timestamp(2)).unwrap(),
             chrono::Duration::seconds(1)
         );
-        assert!(Option::<chrono::Duration>::decode(&DbValue::DbNull)
-            .unwrap()
-            .is_none());
+        assert!(
+            Option::<chrono::Duration>::decode(&DbValue::DbNull)
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]
@@ -1152,9 +1164,11 @@ mod tests {
             uuid::Uuid::try_parse(uuid_str).unwrap(),
             uuid::Uuid::decode(&DbValue::Uuid(uuid_str.to_owned())).unwrap(),
         );
-        assert!(Option::<uuid::Uuid>::decode(&DbValue::DbNull)
-            .unwrap()
-            .is_none());
+        assert!(
+            Option::<uuid::Uuid>::decode(&DbValue::DbNull)
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[derive(Debug, serde::Deserialize, PartialEq)]

@@ -1,9 +1,9 @@
 use std::pin::pin;
 use std::time::{Duration, Instant};
 
-use futures::{channel::mpsc::Sender, SinkExt};
+use futures::{SinkExt, channel::mpsc::Sender};
 use http::Request;
-use spin_sdk::http::{body, send, EmptyBody, IntoResponse};
+use spin_sdk::http::{EmptyBody, IntoResponse, body, send};
 use spin_sdk::http_service;
 
 // In this streaming scenario, the entry point is a shim

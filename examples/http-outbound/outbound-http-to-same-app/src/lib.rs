@@ -1,6 +1,6 @@
 use anyhow::Result;
 use spin_sdk::{
-    http::{send, EmptyBody, IntoResponse, Request},
+    http::{EmptyBody, IntoResponse, Request, send},
     http_service,
 };
 
