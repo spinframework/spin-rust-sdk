@@ -38,7 +38,7 @@ pub mod wit {
 }
 
 #[cfg(feature = "json")]
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 #[doc(inline)]
 pub use wit::key_value::Error;

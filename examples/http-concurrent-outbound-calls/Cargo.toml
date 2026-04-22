@@ -4,7 +4,7 @@ authors = ["The Spin project"]
 description = ""
 version = "0.1.0"
 rust-version = "1.90" # required for `wasm32-wasip2` target to build WASIp3
-edition = "2021"
+edition = "2024"
 
 [lib]
 crate-type = ["cdylib"]

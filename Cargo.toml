@@ -26,7 +26,7 @@ members = [
 [workspace.package]
 version = "6.0.0"
 authors = ["Spin Framework Maintainers <cncf-spin-maintainers@lists.cncf.io>"]
-edition = "2021"
+edition = "2024"
 readme = "README.md"
 license = "Apache-2.0 WITH LLVM-exception"
 repository = "https://github.com/spinframework/spin-rust-sdk"

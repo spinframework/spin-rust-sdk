@@ -1,8 +1,8 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use bytes::Bytes;
 use http::{HeaderValue, Method, Response};
 use spin_sdk::{
-    http::{body::IncomingBodyExt, EmptyBody, FullBody, OptionalBody, Request},
+    http::{EmptyBody, FullBody, OptionalBody, Request, body::IncomingBodyExt},
     http_service,
     mysql::{self, ParameterValue},
 };

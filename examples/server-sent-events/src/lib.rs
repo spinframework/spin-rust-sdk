@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use futures::channel::mpsc::Sender;
-use spin_sdk::http::{body, IntoResponse, Request, Response};
+use spin_sdk::http::{IntoResponse, Request, Response, body};
 use spin_sdk::http_service;
 
 use futures::SinkExt;

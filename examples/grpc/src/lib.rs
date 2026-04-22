@@ -1,4 +1,4 @@
-use spin_sdk::http::{grpc, IntoResponse, Request};
+use spin_sdk::http::{IntoResponse, Request, grpc};
 use spin_sdk::http_service;
 
 mod proto {

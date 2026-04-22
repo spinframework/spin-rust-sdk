@@ -521,7 +521,7 @@ impl<T: serde::Serialize> IntoResponse for Json<T> {
 #[cfg(feature = "json")]
 impl<T: serde::Serialize> IntoResponse for (http::StatusCode, Json<T>) {
     fn into_response(self) -> HttpResult<types::Response> {
-        let body = serde_json::to_vec(&self.1 .0)
+        let body = serde_json::to_vec(&self.1.0)
             .map_err(|e| types::ErrorCode::InternalError(Some(e.to_string())))?;
         let mut resp = http::Response::builder()
             .status(self.0)

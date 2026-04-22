@@ -63,14 +63,17 @@ pub mod time;
 #[cfg_attr(docsrs, doc(cfg(feature = "variables")))]
 pub mod variables;
 
-#[export_name = concat!("spin-sdk-version-", env!("SDK_VERSION"))]
+// SAFETY: There should only be a single definition of the spin-sdk-version-* symbol.
+#[unsafe(export_name = concat!("spin-sdk-version-", env!("SDK_VERSION")))]
 extern "C" fn __spin_sdk_version() {}
 
+// SAFETY: There should only be a single definition of the spin-sdk-language-rust symbol.
 #[cfg(feature = "export-sdk-language")]
-#[export_name = "spin-sdk-language-rust"]
+#[unsafe(export_name = "spin-sdk-language-rust")]
 extern "C" fn __spin_sdk_language() {}
 
-#[export_name = concat!("spin-sdk-commit-", env!("SDK_COMMIT"))]
+// SAFETY: There should only be a single definition of the spin-sdk-commit-* symbol.
+#[unsafe(export_name = concat!("spin-sdk-commit-", env!("SDK_COMMIT")))]
 extern "C" fn __spin_sdk_hash() {}
 
 pub use wasip3::{self, wit_bindgen};

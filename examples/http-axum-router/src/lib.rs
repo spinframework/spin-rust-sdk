@@ -1,7 +1,7 @@
 use axum::{
+    Json, Router,
     http::StatusCode,
     routing::{get, post},
-    Json, Router,
 };
 use serde::{Deserialize, Serialize};
 use spin_sdk::http::{IntoResponse, Request};

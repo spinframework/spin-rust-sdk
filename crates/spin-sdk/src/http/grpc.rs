@@ -49,10 +49,10 @@ use std::convert::Infallible;
 pub async fn serve<S, B>(mut svc: S, req: crate::http::Request) -> http::Response<B>
 where
     S: tower_service::Service<
-        crate::http::Request,
-        Response = http::Response<B>,
-        Error = Infallible,
-    >,
+            crate::http::Request,
+            Response = http::Response<B>,
+            Error = Infallible,
+        >,
 {
     // Infallible error — unwrap is safe.
     svc.call(req).await.unwrap_or_else(|e| match e {})

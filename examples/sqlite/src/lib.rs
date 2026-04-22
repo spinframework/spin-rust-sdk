@@ -125,11 +125,7 @@ async fn list_users() -> Result<http::Response<String>> {
 fn extract_param(query: &str, key: &str) -> Option<String> {
     query.split('&').find_map(|pair| {
         let (k, v) = pair.split_once('=')?;
-        if k == key {
-            Some(urldecode(v))
-        } else {
-            None
-        }
+        if k == key { Some(urldecode(v)) } else { None }
     })
 }
 

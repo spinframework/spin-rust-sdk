@@ -9,8 +9,8 @@
 
 use bytes::Bytes;
 use futures::{
-    channel::mpsc::{channel, Sender},
     StreamExt,
+    channel::mpsc::{Sender, channel},
 };
 use http_body_util::{BodyDataStream, BodyExt};
 use wasip3::{
