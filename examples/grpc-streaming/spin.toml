@@ -1,0 +1,20 @@
+#:schema https://schemas.spinframework.dev/spin/manifest-v2/latest.json
+
+spin_manifest_version = 2
+
+[application]
+name = "grpc-streaming"
+version = "0.1.0"
+authors = ["The Spin authors"]
+description = "An example gRPC application with bidirectional streaming"
+
+[[trigger.http]]
+route = "/..."
+component = "grpc-streaming"
+
+[component.grpc-streaming]
+source = "../../target/wasm32-wasip2/release/grpc_streaming.wasm"
+sqlite_databases = ["default"]
+[component.grpc-streaming.build]
+command = "cargo build --target wasm32-wasip2 --release"
+watch = ["src/**/*.rs", "Cargo.toml", "proto/**/*.proto"]
