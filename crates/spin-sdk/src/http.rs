@@ -16,6 +16,10 @@ pub mod body;
 #[cfg(feature = "grpc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "grpc")))]
 pub mod grpc;
+/// An HTTP request router with pattern-matched paths and per-method handlers.
+#[cfg(feature = "router")]
+#[cfg_attr(docsrs, doc(cfg(feature = "router")))]
+pub mod router;
 
 /// A alias for [`std::result::Result`] that uses [`Error`] as the default error type.
 ///
