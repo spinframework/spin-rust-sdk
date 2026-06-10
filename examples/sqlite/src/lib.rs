@@ -2,7 +2,7 @@ use anyhow::Result;
 use serde::Serialize;
 use spin_sdk::http::{IntoResponse, Request};
 use spin_sdk::http_service;
-use spin_sdk::sqlite::{Connection, Value};
+use spin_sdk::sqlite::Connection;
 
 /// A simple user record for JSON serialization.
 #[derive(Serialize)]
@@ -61,7 +61,7 @@ async fn create_user(req: &Request) -> Result<http::Response<String>> {
     let query_result = db
         .execute(
             "INSERT INTO users (name, email) VALUES (?, ?)",
-            [Value::Text(name), Value::Text(email)],
+            [name.into(), email.into()],
         )
         .await?;
 
