@@ -276,7 +276,7 @@ impl<'a> TryFrom<&'a Value> for bool {
     }
 }
 
-macro_rules! int_conversions {
+macro_rules! int_from_value {
     ($($t:ty),*) => {
         $(impl<'a> TryFrom<&'a Value> for $t {
             type Error = ();
@@ -291,7 +291,7 @@ macro_rules! int_conversions {
     };
 }
 
-int_conversions!(u8, u16, u32, u64, i8, i16, i32, i64, usize, isize);
+int_from_value!(u8, u16, u32, u64, i8, i16, i32, i64, usize, isize);
 
 impl<'a> TryFrom<&'a Value> for f64 {
     type Error = ();
@@ -325,5 +325,152 @@ impl<'a> TryFrom<&'a Value> for &'a [u8] {
             Value::Text(s) => Ok(s.as_bytes()),
             _ => Err(()),
         }
+    }
+}
+
+impl Value {
+    /// Creates a Text parameter.
+    pub fn text(value: impl Into<String>) -> Self {
+        Self::Text(value.into())
+    }
+
+    /// Creates an Integer parameter.
+    pub fn integer(value: impl Into<i64>) -> Self {
+        Self::Integer(value.into())
+    }
+
+    /// Creates a Real parameter.
+    pub fn real(value: impl Into<f64>) -> Self {
+        Self::Real(value.into())
+    }
+
+    /// Creates a Blob parameter.
+    pub fn blob(value: impl Into<Vec<u8>>) -> Self {
+        Self::Blob(value.into())
+    }
+}
+
+impl From<&str> for Value {
+    fn from(value: &str) -> Self {
+        Self::Text(value.into())
+    }
+}
+
+impl From<String> for Value {
+    fn from(value: String) -> Self {
+        Self::Text(value)
+    }
+}
+
+macro_rules! value_from_int {
+    ($($t:ty),*) => {
+        $(impl From<$t> for Value {
+            fn from(value: $t) -> Self {
+                Self::integer(value)
+            }
+        })*
+    };
+}
+
+value_from_int!(u8, u16, u32, i8, i16, i32, i64);
+
+impl From<f32> for Value {
+    fn from(value: f32) -> Self {
+        Self::Real(value.into())
+    }
+}
+
+impl From<f64> for Value {
+    fn from(value: f64) -> Self {
+        Self::Real(value)
+    }
+}
+
+impl From<&[u8]> for Value {
+    fn from(value: &[u8]) -> Self {
+        Self::Blob(value.into())
+    }
+}
+
+impl<const N: usize> From<[u8; N]> for Value {
+    fn from(value: [u8; N]) -> Self {
+        Self::Blob(value.into())
+    }
+}
+
+impl<const N: usize> From<&[u8; N]> for Value {
+    fn from(value: &[u8; N]) -> Self {
+        Self::Blob(value.into())
+    }
+}
+
+impl From<Vec<u8>> for Value {
+    fn from(value: Vec<u8>) -> Self {
+        Self::Blob(value)
+    }
+}
+
+impl<T: Into<Value>> From<Option<T>> for Value {
+    fn from(value: Option<T>) -> Self {
+        match value {
+            None => Value::Null,
+            Some(value) => value.into(),
+        }
+    }
+}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Integer(l0), Self::Integer(r0)) => l0 == r0,
+            (Self::Real(l0), Self::Real(r0)) => l0 == r0,
+            (Self::Text(l0), Self::Text(r0)) => l0 == r0,
+            (Self::Blob(l0), Self::Blob(r0)) => l0 == r0,
+            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn value_conversions() {
+        let expected_text = Value::Text("a".to_string());
+        let expected_int = Value::Integer(123);
+        let expected_real = Value::Real(1234.5); // the test wants equality and FP stuff is notoriously inexact: use a value for testing that won't incur off-by-0.00000001 errors
+        let expected_real_int = Value::Real(123.0);
+        let expected_blob = Value::Blob(vec![1, 2, 3]);
+
+        assert_eq!(expected_text, Value::text("a"));
+        assert_eq!(expected_text, "a".into());
+        assert_eq!(expected_text, "a".to_string().into());
+
+        assert_eq!(expected_int, Value::integer(123u8));
+        assert_eq!(expected_int, Value::integer(123i16));
+        assert_eq!(expected_int, Value::integer(123u32));
+        assert_eq!(expected_int, Value::integer(123i64));
+        assert_eq!(expected_int, 123u8.into());
+        assert_eq!(expected_int, 123i16.into());
+        assert_eq!(expected_int, 123u32.into());
+        assert_eq!(expected_int, 123i64.into());
+
+        assert_eq!(expected_real, Value::real(1234.5f32));
+        assert_eq!(expected_real, Value::real(1234.5f64));
+        assert_eq!(expected_real, 1234.5f32.into());
+        assert_eq!(expected_real, 1234.5f64.into());
+        // named function allows passing integer to Real case (where `into()` would give you the Integer case)
+        assert_eq!(expected_real_int, Value::real(123u32));
+
+        assert_eq!(expected_blob, Value::blob([1, 2, 3]));
+        assert_eq!(expected_blob, Value::blob(vec![1, 2, 3]));
+        assert_eq!(expected_blob, (&[1, 2, 3]).into());
+        assert_eq!(expected_blob, ([1, 2, 3][..]).into());
+        assert_eq!(expected_blob, [1, 2, 3].into());
+        assert_eq!(expected_blob, (vec![1, 2, 3]).into());
+
+        assert_eq!(Value::Null, None::<i16>.into());
+        assert_eq!(expected_int, Some(123u32).into());
     }
 }
