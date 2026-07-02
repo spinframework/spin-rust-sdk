@@ -32,6 +32,10 @@ world spin-sdk-variables {
     import spin:variables/variables@3.0.0;
 }
 
+world spin-sdk-middleware {
+    import wasi:http/handler@0.3.0-rc-2026-03-15;
+}
+
 world spin-sdk-experimental {
     import wasi:config/store@0.2.0-draft-2024-09-27;
     include wasi:keyvalue/imports@0.2.0-draft2;
