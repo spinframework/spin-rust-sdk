@@ -35,10 +35,15 @@ pub mod llm;
 #[cfg_attr(docsrs, doc(cfg(feature = "mqtt")))]
 pub mod mqtt;
 
-/// MySQL database access.
+// MySQL database access. Blocking interface for downlevel runtimes.
 #[cfg(feature = "mysql")]
 #[cfg_attr(docsrs, doc(cfg(feature = "mysql")))]
 pub mod mysql;
+
+// MySQL database access.
+#[cfg(feature = "mysql-async")]
+#[cfg_attr(docsrs, doc(cfg(feature = "mysql-async")))]
+pub mod mysql_async;
 
 /// PostgreSQL database access.
 #[cfg(feature = "pg")]

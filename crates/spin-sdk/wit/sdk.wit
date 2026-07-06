@@ -16,6 +16,10 @@ world spin-sdk-mysql {
     import fermyon:spin/mysql@2.0.0;
 }
 
+world spin-sdk-mysql-v3 {
+    import spin:mysql/mysql@3.0.0;
+}
+
 world spin-sdk-pg {
     import spin:postgres/postgres@4.2.0;
 }

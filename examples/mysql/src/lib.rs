@@ -1,10 +1,13 @@
 use anyhow::{Result, anyhow};
-use bytes::Bytes;
-use http::{HeaderValue, Method, Response};
+use futures::SinkExt;
+use http::{HeaderValue, Method};
 use spin_sdk::{
-    http::{EmptyBody, FullBody, OptionalBody, Request, body::IncomingBodyExt},
+    http::{
+        BoxBody, EmptyBody, FullBody, IntoResponse, Request, Response, body::IncomingBodyExt,
+        box_body,
+    },
     http_service,
-    mysql::{self, ParameterValue},
+    mysql_async::{self as mysql, ParameterValue},
 };
 use std::{collections::HashMap, str::FromStr};
 
@@ -24,13 +27,14 @@ enum RequestAction {
 }
 
 #[http_service]
-async fn rust_outbound_mysql(req: Request) -> Result<Response<OptionalBody<Bytes>>> {
-    match parse_request(req).await? {
-        RequestAction::List => list(),
-        RequestAction::Get(id) => get(id),
-        RequestAction::Create(name, prey, is_finicky) => create(name, prey, is_finicky),
-        RequestAction::Error(status) => error(status),
-    }
+async fn rust_outbound_mysql(req: Request) -> Result<impl IntoResponse> {
+    let response = match parse_request(req).await? {
+        RequestAction::List => list().await?,
+        RequestAction::Get(id) => get(id).await?,
+        RequestAction::Create(name, prey, is_finicky) => create(name, prey, is_finicky).await?,
+        RequestAction::Error(status) => error(status)?,
+    };
+    Ok(response)
 }
 
 async fn parse_request(req: Request) -> Result<RequestAction> {
@@ -80,74 +84,76 @@ fn header_val_to_int(header_val: &HeaderValue) -> Result<Option<i32>, ()> {
     }
 }
 
-fn list() -> Result<Response<OptionalBody<Bytes>>> {
+async fn list() -> Result<Response<BoxBody>> {
     let address = std::env::var(DB_URL_ENV)?;
-    let conn = mysql::Connection::open(&address)?;
+    let conn = mysql::Connection::open(&address).await?;
 
     let sql = "SELECT id, name, prey, is_finicky FROM pets";
-    let rowset = conn.query(sql, &[])?;
+    let mut qr = conn.query(sql, &[]).await?;
 
-    let column_summary = rowset
-        .columns
-        .iter()
-        .map(format_col)
-        .collect::<Vec<_>>()
-        .join(", ");
+    let (mut tx, body) = spin_sdk::http::body::stream();
 
-    let mut response_lines = vec![];
+    spin_sdk::wit_bindgen::spawn(async move {
+        let column_summary = qr
+            .columns()
+            .iter()
+            .map(format_col)
+            .collect::<Vec<_>>()
+            .join(", ");
 
-    for row in rowset.rows {
-        let pet = as_pet(&row);
-        println!("{:#?}", pet);
-        response_lines.push(format!("{:#?}", pet));
-    }
+        let mut pet_count = 0;
 
-    let message = format!(
-        "Found {} pet(s) as follows:\n{}\n\n(Column info: {})\n",
-        response_lines.len(),
-        response_lines.join("\n"),
-        column_summary,
-    );
+        while let Some(row) = qr.next().await {
+            let pet = as_pet(&row).ok_or(anyhow!("un-decodable entry"));
+            println!("{:#?}", pet);
+            tx.send(format!("{:#?}\n", pet)).await.unwrap(); // caller has gone away
+            pet_count += 1;
+        }
 
-    let response = Bytes::copy_from_slice(message.as_bytes());
+        match qr.result().await {
+            Ok(()) => {
+                tx.send(format!("{pet_count} pets found\n")).await.unwrap();
+                tx.send(format!("Column info: {column_summary}\n"))
+                    .await
+                    .unwrap();
+            }
+            Err(e) => {
+                tx.send(format!("List failed! {e:#}\n")).await.unwrap();
+            }
+        }
+    });
 
-    Ok(http::Response::builder()
-        .status(200)
-        .body(OptionalBody::Left(FullBody::new(response)))?)
+    Ok(Response::new(box_body(body)))
 }
 
-fn get(id: i32) -> Result<Response<OptionalBody<Bytes>>> {
+async fn get(id: i32) -> Result<Response<BoxBody>> {
     let address = std::env::var(DB_URL_ENV)?;
-    let conn = mysql::Connection::open(&address)?;
+    let conn = mysql::Connection::open(&address).await?;
 
     let sql = "SELECT id, name, prey, is_finicky FROM pets WHERE id = ?";
-    let params = vec![ParameterValue::Int32(id)];
-    let rowset = conn.query(sql, &params)?;
+    let mut qr = conn.query(sql, &[id.into()]).await?;
 
-    match rowset.rows.first() {
-        None => Ok(http::Response::builder()
+    let response = match qr.next().await {
+        None => Response::builder()
             .status(404)
-            .body(OptionalBody::Right(EmptyBody::new()))?),
+            .body(box_body(EmptyBody::new()))?,
         Some(row) => {
-            let pet = as_pet(row)?;
-            let message = format!("{:?}", pet);
-            let response = Bytes::copy_from_slice(message.as_bytes());
-            Ok(http::Response::builder()
+            let pet = as_pet(&row);
+            let message = format!("{:?}\n", pet);
+            Response::builder()
                 .status(200)
-                .body(OptionalBody::Left(FullBody::new(response)))?)
+                .body(box_body(FullBody::new(message.into())))?
         }
-    }
+    };
+
+    Ok(response)
 }
 
-fn create(
-    name: String,
-    prey: Option<String>,
-    is_finicky: bool,
-) -> Result<Response<OptionalBody<Bytes>>> {
+async fn create(name: String, prey: Option<String>, is_finicky: bool) -> Result<Response<BoxBody>> {
     let address = std::env::var(DB_URL_ENV)?;
-    let conn = mysql::Connection::open(&address)?;
+    let conn = mysql::Connection::open(&address).await?;
 
-    let id = max_pet_id(&conn)? + 1;
+    let id = max_pet_id(&conn).await? + 1;
 
     let prey_param = match prey {
         None => ParameterValue::DbNull,
@@ -163,31 +169,31 @@ fn create(
         prey_param,
         is_finicky_param,
     ];
-    conn.execute(sql, &params)?;
+    conn.execute(sql, params).await?;
 
     let location_url = format!("/{}", id);
 
     Ok(http::Response::builder()
         .status(201)
         .header("Location", location_url)
-        .body(OptionalBody::Right(EmptyBody::new()))?)
+        .body(box_body(EmptyBody::new()))?)
 }
 
-fn error(status: u16) -> Result<Response<OptionalBody<Bytes>>> {
+fn error(status: u16) -> Result<Response<BoxBody>> {
     Ok(http::Response::builder()
         .status(status)
-        .body(OptionalBody::Right(EmptyBody::new()))?)
+        .body(box_body(EmptyBody::new()))?)
 }
 
 fn format_col(column: &mysql::Column) -> String {
     format!("{}: {:?}", column.name, column.data_type)
 }
 
-fn max_pet_id(conn: &mysql::Connection) -> Result<i32> {
+async fn max_pet_id(conn: &mysql::Connection) -> Result<i32> {
     let sql = "SELECT MAX(id) FROM pets";
-    let rowset = conn.query(sql, &[])?;
+    let mut qr = conn.query(sql, &[]).await?;
 
-    match rowset.rows.first() {
+    match qr.rows().next().await {
         None => Ok(0),
         Some(row) => match row.first() {
             None => Ok(0),

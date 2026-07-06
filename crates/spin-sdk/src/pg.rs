@@ -206,7 +206,6 @@ impl Connection {
         params: impl Into<Vec<ParameterValue>>,
     ) -> Result<QueryResult, Error> {
         let (columns, rows, result) = self.0.query_async(statement.into(), params.into()).await?;
-        // let result = result.into_future();
         Ok(QueryResult {
             columns: Arc::new(columns),
             rows,
@@ -314,7 +313,7 @@ impl QueryResult {
 
 /// A database row result.
 ///
-/// There are two representations of a SQLite row in the SDK.  This type is useful for
+/// There are two representations of a PostgreSQL row in the SDK.  This type is useful for
 /// addressing elements by column name, and is obtained from the [QueryResult::next()] function.
 /// The [DbValue] vector representation is obtained from the [QueryResult::rows()] function, and provides
 /// index-based lookup or low-level access to row values via a vector.

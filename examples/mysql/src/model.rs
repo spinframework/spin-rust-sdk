@@ -1,5 +1,4 @@
-use anyhow::Result;
-use spin_sdk::mysql::{self, Decode};
+use spin_sdk::mysql_async::{self as mysql};
 
 // Such logic, very business
 
@@ -12,13 +11,13 @@ pub(crate) struct Pet {
     is_finicky: bool,
 }
 
-pub(crate) fn as_pet(row: &mysql::Row) -> Result<Pet> {
-    let id = i32::decode(&row[0])?;
-    let name = String::decode(&row[1])?;
-    let prey = Option::<String>::decode(&row[2])?;
-    let is_finicky = bool::decode(&row[3])?;
+pub(crate) fn as_pet(row: &mysql::Row) -> Option<Pet> {
+    let id = row.get("id")?;
+    let name = row.get("name")?;
+    let prey = row.get("prey")?;
+    let is_finicky = row.get("is_finicky")?;
 
-    Ok(Pet {
+    Some(Pet {
         id,
         name,
         prey,
