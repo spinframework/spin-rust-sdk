@@ -172,6 +172,34 @@ pub async fn send(request: impl IntoRequest) -> HttpResult<Response> {
     Response::from_response(response)
 }
 
+#[cfg(feature = "http-middleware")]
+mod middleware {
+    use crate::wit_bindgen;
+
+    wit_bindgen::generate!({
+        runtime_path: "crate::wit_bindgen::rt",
+        world: "spin-sdk-middleware",
+        path: "wit",
+        with: {
+            "wasi:http/types@0.3.0-rc-2026-03-15": wasip3::http::types,
+        },
+        generate_all,
+    });
+}
+
+/// Sends an HTTP request to the next item in the middleware chain, and returns the [`wasip3::http::types::Response`]
+/// from that next item.
+///
+/// This function converts the provided value into a [`wasip3::http::types::Request`] using the
+/// [`IntoRequest`] trait, dispatches it to the WASI HTTP middleware handler, and awaits
+/// the resulting response.
+#[cfg(feature = "http-middleware")]
+pub async fn next(request: impl IntoRequest) -> HttpResult<Response> {
+    let request = request.into_request()?;
+    let response = middleware::wasi::http::handler::handle(request).await?;
+    Response::from_response(response)
+}
+
 /// Sends a GET request to the given URL.
 ///
 /// This is a convenience wrapper around [`send`] that issues a GET request
