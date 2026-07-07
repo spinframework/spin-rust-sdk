@@ -1,5 +1,7 @@
 use bytes::Bytes;
-use spin_sdk::http::{EmptyBody, FullBody, IntoResponse, Request, body::IncomingBodyExt};
+use spin_sdk::http::{
+    EmptyBody, FullBody, IntoResponse, OptionalBody, Request, body::IncomingBodyExt,
+};
 use spin_sdk::http_service;
 use spin_sdk::key_value::Store;
 
@@ -42,11 +44,10 @@ async fn handle_request(req: Request) -> anyhow::Result<impl IntoResponse> {
         _ => (http::StatusCode::METHOD_NOT_ALLOWED, None),
     };
 
-    let resp = http::Response::builder().status(status);
+    let body: OptionalBody<Bytes> = match body {
+        Some(value) => OptionalBody::Left(FullBody::new(Bytes::from(value))),
+        None => OptionalBody::Right(EmptyBody::new()),
+    };
 
-    if let Some(body) = body.map(Bytes::from) {
-        Ok(resp.body(FullBody::new(body)).into_response()?)
-    } else {
-        Ok(resp.body(EmptyBody::new()).into_response()?)
-    }
+    Ok(http::Response::builder().status(status).body(body)?)
 }

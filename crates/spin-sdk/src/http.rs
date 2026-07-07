@@ -323,6 +323,54 @@ pub type FullBody<T> = http_body_util::Full<T>;
 /// ```
 pub type OptionalBody<T> = http_body_util::Either<FullBody<T>, EmptyBody>;
 
+/// A type-erased HTTP body.
+///
+/// This is a convenience alias for [`http_body_util::combinators::UnsyncBoxBody`]
+/// carrying [`bytes::Bytes`] data and [`anyhow::Error`] errors.
+///
+/// It is useful when a handler produces different concrete body types on
+/// different code paths, for example, a streaming body on one branch and an
+/// [`EmptyBody`] on another. Because those bodies have different types, they
+/// cannot be returned from the same `match` or `if` directly. Erasing each one
+/// to a `BoxBody` with [`box_body`] gives every branch the single, shared type
+/// [`Response<BoxBody>`](wasip3::http_compat::Response).
+///
+/// # Examples
+///
+/// ```no_run
+/// use spin_sdk::http::{box_body, BoxBody, EmptyBody, FullBody, Response};
+///
+/// # fn found() -> bool { true }
+/// let response: Response<BoxBody> = if found() {
+///     Response::new(box_body(FullBody::new(bytes::Bytes::from("hello"))))
+/// } else {
+///     Response::builder()
+///         .status(404)
+///         .body(box_body(EmptyBody::new()))
+///         .unwrap()
+/// };
+/// ```
+pub type BoxBody = http_body_util::combinators::UnsyncBoxBody<bytes::Bytes, anyhow::Error>;
+
+/// Erase a concrete HTTP body into a [`BoxBody`].
+///
+/// This unifies several different body types behind a single
+/// [`Response<BoxBody>`](wasip3::http_compat::Response) type, which is useful for
+/// handlers whose branches produce different bodies (streaming, full, empty,
+/// and so on). Any body whose data is [`bytes::Bytes`] and whose error converts
+/// into [`anyhow::Error`], including the infallible [`EmptyBody`] and
+/// [`FullBody`], can be boxed.
+///
+/// See [`BoxBody`] for a complete example.
+pub fn box_body<B>(body: B) -> BoxBody
+where
+    B: http_body::Body<Data = bytes::Bytes> + Send + 'static,
+    B::Error: Into<anyhow::Error>,
+{
+    use http_body_util::BodyExt;
+    body.map_err(Into::into).boxed_unsync()
+}
+
 /// A trait for constructing a value from a [`wasip3::http::types::Request`].
 ///
 /// This is the inverse of [`IntoRequest`], allowing higher-level request
