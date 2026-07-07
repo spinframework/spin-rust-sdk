@@ -1,5 +1,5 @@
 use anyhow::{Result, anyhow};
-use futures::SinkExt;
+use futures::{FutureExt, SinkExt};
 use http::{HeaderValue, Method};
 use spin_sdk::{
     http::{
@@ -93,35 +93,38 @@ async fn list() -> Result<Response<BoxBody>> {
 
     let (mut tx, body) = spin_sdk::http::body::stream();
 
-    spin_sdk::wasip3::spawn(async move {
-        let column_summary = qr
-            .columns()
-            .iter()
-            .map(format_col)
-            .collect::<Vec<_>>()
-            .join(", ");
+    spin_sdk::wasip3::spawn(
+        async move {
+            let column_summary = qr
+                .columns()
+                .iter()
+                .map(format_col)
+                .collect::<Vec<_>>()
+                .join(", ");
 
-        let mut pet_count = 0;
+            let mut pet_count = 0;
 
-        while let Some(row) = qr.next().await {
-            let pet = as_pet(&row).ok_or(anyhow!("un-decodable entry"));
-            println!("{:#?}", pet);
-            tx.send(format!("{:#?}\n", pet)).await.unwrap(); // caller has gone away
-            pet_count += 1;
-        }
-
-        match qr.result().await {
-            Ok(()) => {
-                tx.send(format!("{pet_count} pets found\n")).await.unwrap();
-                tx.send(format!("Column info: {column_summary}\n"))
-                    .await
-                    .unwrap();
+            while let Some(row) = qr.next().await {
+                let pet = as_pet(&row).ok_or(anyhow!("un-decodable entry"));
+                println!("{:#?}", pet);
+                tx.send(format!("{:#?}\n", pet)).await?;
+                pet_count += 1;
             }
-            Err(e) => {
-                tx.send(format!("List failed! {e:#}\n")).await.unwrap();
+
+            match qr.result().await {
+                Ok(()) => {
+                    tx.send(format!("{pet_count} pets found\n")).await?;
+                    tx.send(format!("Column info: {column_summary}\n")).await?;
+                }
+                Err(e) => {
+                    tx.send(format!("List failed! {e:#}\n")).await?;
+                }
             }
+
+            Ok(())
         }
-    });
+        .map(|_: Result<(), futures::channel::mpsc::SendError>| ()), // ignore send errors - client disconnected
+    );
 
     Ok(Response::new(box_body(body)))
 }
