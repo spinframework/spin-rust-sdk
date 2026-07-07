@@ -32,7 +32,7 @@ async fn process(req: Request) -> Result<impl IntoResponse> {
 
     let (mut tx, body) = body::stream();
 
-    spin_sdk::wit_bindgen::spawn(async move {
+    spin_sdk::wasip3::spawn(async move {
         let mut had_ruler = false;
 
         while let Some(ruler) = rulers.next().await {

@@ -12,7 +12,7 @@
 #![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-/// Re-export entrypoint macros
+// Re-export entrypoint macros
 pub use spin_macro::{dependencies, http_service, redis_subscriber};
 
 /// Incoming and outgoing HTTP requests.
@@ -20,7 +20,7 @@ pub use spin_macro::{dependencies, http_service, redis_subscriber};
 #[cfg_attr(docsrs, doc(cfg(feature = "http")))]
 pub mod http;
 
-/// Persistent key-value storage.
+// Persistent key-value storage.
 #[cfg(feature = "key-value")]
 #[cfg_attr(docsrs, doc(cfg(feature = "key-value")))]
 pub mod key_value;
@@ -30,7 +30,7 @@ pub mod key_value;
 #[cfg_attr(docsrs, doc(cfg(feature = "llm")))]
 pub mod llm;
 
-/// MQTT message publishing.
+// MQTT message publishing.
 #[cfg(feature = "mqtt")]
 #[cfg_attr(docsrs, doc(cfg(feature = "mqtt")))]
 pub mod mqtt;
@@ -45,12 +45,12 @@ pub mod mysql;
 #[cfg_attr(docsrs, doc(cfg(feature = "mysql-async")))]
 pub mod mysql_async;
 
-/// PostgreSQL database access.
+// PostgreSQL database access.
 #[cfg(feature = "pg")]
 #[cfg_attr(docsrs, doc(cfg(feature = "pg")))]
 pub mod pg;
 
-/// Redis storage and pub/sub.
+// Redis storage and pub/sub.
 #[cfg(feature = "redis")]
 #[cfg_attr(docsrs, doc(cfg(feature = "redis")))]
 pub mod redis;
@@ -63,7 +63,7 @@ pub mod sqlite;
 /// Time-related functions.
 pub mod time;
 
-/// Application variable lookup.
+// Application variable lookup.
 #[cfg(feature = "variables")]
 #[cfg_attr(docsrs, doc(cfg(feature = "variables")))]
 pub mod variables;
