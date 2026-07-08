@@ -37,7 +37,7 @@ world spin-sdk-variables {
 }
 
 world spin-sdk-middleware {
-    import wasi:http/handler@0.3.0-rc-2026-03-15;
+    import wasi:http/handler@0.3.0;
 }
 
 world spin-sdk-experimental {
