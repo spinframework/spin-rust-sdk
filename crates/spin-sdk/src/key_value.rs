@@ -1,4 +1,4 @@
-//! Spin key-value persistent storage.
+//! Persistent key-value storage.
 //!
 //! This module provides a generic interface for key-value storage, which may be implemented by the host various
 //! ways (e.g. via an in-memory table, a local file, or a remote database). Details such as consistency model and

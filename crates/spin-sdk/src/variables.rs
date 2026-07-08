@@ -1,3 +1,5 @@
+//! Application variable lookup.
+//!
 //! Component variables must be defined in the application
 //! manifest, in the `[component.<name>.variables]` section.
 //! Component variables typically use template syntax to

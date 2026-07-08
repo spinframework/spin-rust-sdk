@@ -1900,7 +1900,9 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bytes",
+ "futures",
  "http",
+ "http-body",
  "serde",
  "serde_json",
  "spin-sdk",
