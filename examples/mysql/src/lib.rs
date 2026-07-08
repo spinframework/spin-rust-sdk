@@ -7,7 +7,7 @@ use spin_sdk::{
         box_body,
     },
     http_service,
-    mysql_async::{self as mysql, ParameterValue},
+    mysql::{self, ParameterValue},
 };
 use std::{collections::HashMap, str::FromStr};
 

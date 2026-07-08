@@ -1,4 +1,4 @@
-use spin_sdk::mysql_async::{self as mysql};
+use spin_sdk::mysql;
 
 // Such logic, very business
 
