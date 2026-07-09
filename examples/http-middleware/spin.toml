@@ -1,0 +1,36 @@
+#:schema https://schemas.spinframework.dev/spin/manifest-v2/latest.json
+
+spin_manifest_version = 2
+
+[application]
+name = "http-middleware"
+version = "0.1.0"
+authors = ["The Spin authors"]
+description = "Demonstrates HTTP middleware with the Spin Rust SDK"
+
+# The trigger routes requests to the `service` component, but first passes them
+# through the middleware listed in `dependencies.middleware`. Middleware are
+# applied outermost-first: a request flows through each middleware (in order) on
+# its way to `service`, and the response flows back out in reverse.
+[[trigger.http]]
+route = "/..."
+component = "service"
+dependencies.middleware = [{ component = "middleware" }]
+
+[component.service]
+source = "../../target/wasm32-wasip2/release/service.wasm"
+allowed_outbound_hosts = []
+[component.service.build]
+workdir = "service"
+command = "cargo build --target wasm32-wasip2 --release"
+watch = ["src/**/*.rs", "Cargo.toml"]
+
+# The middleware is declared as a component but has no trigger of its own; it is
+# attached to the `service` trigger above via `dependencies.middleware`.
+[component.middleware]
+source = "../../target/wasm32-wasip2/release/middleware.wasm"
+allowed_outbound_hosts = []
+[component.middleware.build]
+workdir = "middleware"
+command = "cargo build --target wasm32-wasip2 --release"
+watch = ["src/**/*.rs", "Cargo.toml"]

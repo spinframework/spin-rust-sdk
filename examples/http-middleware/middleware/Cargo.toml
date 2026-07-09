@@ -1,0 +1,12 @@
+[package]
+name = "middleware"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# The `http-middleware` feature enables `spin_sdk::http::next`, which forwards a
+# request to the next handler in the middleware chain.
+spin-sdk = { path = "../../../crates/spin-sdk", features = ["http-middleware"] }

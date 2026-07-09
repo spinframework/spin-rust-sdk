@@ -7,6 +7,8 @@ members = [
   "examples/http-axum-router",
   "examples/http-concurrent-outbound-calls",
   "examples/http-hello-world",
+  "examples/http-middleware/middleware",
+  "examples/http-middleware/service",
   "examples/http-outbound/outbound-http",
   "examples/http-outbound/outbound-http-to-same-app",
   "examples/http-send-request",
