@@ -1,3 +1,56 @@
+//! Incoming and outgoing HTTP requests.
+//!
+//! This module is the foundation for building HTTP components with Spin. It is
+//! built on the [`http`](https://docs.rs/http) crate's [`Request`] and
+//! [`Response`] types, so it interoperates with the wider Rust HTTP ecosystem,
+//! and it adds the glue needed to serve requests from — and issue requests to
+//! — the Spin runtime.
+//!
+//! # Handling incoming requests
+//!
+//! Annotate an `async fn` with the [`http_service`](crate::http_service)
+//! attribute macro to expose it as the component's HTTP entry point. The
+//! handler receives a [`Request`] and returns any type that implements
+//! [`IntoResponse`] — such as `&str`, `String`, a [`StatusCode`], a tuple of
+//! those, or a fully built [`Response`].
+//!
+//! ```ignore
+//! use spin_sdk::http::{IntoResponse, Request, StatusCode};
+//! use spin_sdk::http_service;
+//!
+//! #[http_service]
+//! async fn handle(req: Request) -> impl IntoResponse {
+//!     (StatusCode::OK, "Hello, world!".to_string())
+//! }
+//! ```
+//!
+//! # Making outbound requests
+//!
+//! Use [`send`] to dispatch a [`Request`] and await the [`Response`], or reach
+//! for the verb helpers [`get`], [`post`], [`put`], [`patch`], and [`delete`]
+//! for the common cases. Every host a component contacts must be granted in the
+//! `allowed_outbound_hosts` field of the application manifest.
+//!
+//! ```ignore
+//! let response = spin_sdk::http::get("https://example.com").await?;
+//! println!("status: {}", response.status());
+//! ```
+//!
+//! # Bodies
+//!
+//! Message bodies are streaming by default. The [`body`] submodule provides the
+//! [`IncomingBodyExt`](body::IncomingBodyExt) extension trait for collecting a
+//! body into memory or consuming it as a stream, plus helpers for producing
+//! outgoing streaming bodies. The [`EmptyBody`], [`FullBody`], [`OptionalBody`],
+//! and [`BoxBody`] aliases cover the common body shapes when building responses
+//! by hand.
+//!
+//! # gRPC
+//!
+//! With the `grpc` feature enabled, the `grpc` submodule serves
+//! [tonic](https://docs.rs/tonic)-generated services directly from a Spin HTTP
+//! component.
+
 pub use wasip3::http_compat::{IncomingMessage, Request, Response};
 
 use hyperium as http;

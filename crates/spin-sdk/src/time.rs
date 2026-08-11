@@ -1,3 +1,24 @@
+//! Time-related functions.
+//!
+//! This module provides asynchronous timing primitives for use inside Spin
+//! components. It currently exposes [`sleep`], which suspends the current task
+//! until a [`Duration`] has elapsed, driven by the host's monotonic clock.
+//!
+//! Unlike [`std::thread::sleep`], [`sleep`] is `async` and yields back to the
+//! executor while it waits, allowing other tasks to make progress.
+//!
+//! # Examples
+//!
+//! Pause execution for half a second:
+//!
+//! ```no_run
+//! use std::time::Duration;
+//!
+//! # async fn run() {
+//! spin_sdk::time::sleep(Duration::from_millis(500)).await;
+//! # }
+//! ```
+
 use std::time::Duration;
 
 /// Wait until the given [`Duration`] has elapsed.

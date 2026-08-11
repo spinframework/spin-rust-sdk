@@ -1,3 +1,41 @@
+//! SQLite database access.
+//!
+//! This module provides access to the SQLite databases configured for the
+//! component in the application manifest. Databases are referenced by name; the
+//! special `default` database is available through
+//! [`Connection::open_default`].
+//!
+//! Queries and commands both go through [`Connection::execute`], which returns
+//! a stream of rows together with a future that reports whether the operation
+//! completed successfully.
+//!
+//! # Examples
+//!
+//! Open the default database and read rows from a query:
+//!
+//! ```no_run
+//! use spin_sdk::sqlite::{Connection, Value};
+//!
+//! # async fn run() -> anyhow::Result<()> {
+//! let db = Connection::open_default().await?;
+//!
+//! let mut query_result = db.execute(
+//!     "SELECT name FROM users WHERE age >= ?",
+//!     [Value::Integer(18)],
+//! ).await?;
+//!
+//! let name_idx = query_result.columns().iter().position(|c| c == "name").unwrap();
+//!
+//! while let Some(row) = query_result.next().await {
+//!     let name: &str = row.get(name_idx).unwrap();
+//!     println!("Found user {name}");
+//! }
+//!
+//! query_result.result().await?;
+//! # Ok(())
+//! # }
+//! ```
+
 use crate::wit_bindgen;
 
 #[doc(hidden)]

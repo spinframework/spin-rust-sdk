@@ -36,6 +36,9 @@ use std::convert::Infallible;
 /// [`tonic::transport::server::Router`] at the type level, or simply
 /// match on the request path and delegate to different `serve` calls.
 ///
+/// [`Router`]: https://docs.rs/tonic/latest/tonic/transport/server/struct.Router.html
+/// [`tonic::transport::server::Router`]: https://docs.rs/tonic/latest/tonic/transport/server/struct.Router.html
+///
 /// # Example
 ///
 /// ```ignore

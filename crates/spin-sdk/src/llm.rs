@@ -1,3 +1,37 @@
+//! Large-language-model inference.
+//!
+//! This module provides access to the language models made available by the
+//! Spin host, covering both text generation ([`infer`] and
+//! [`infer_with_options`]) and embeddings ([`generate_embeddings`]). The set of
+//! usable models is configured for the component in the application manifest.
+//!
+//! # Examples
+//!
+//! Run inference against a model:
+//!
+//! ```no_run
+//! use spin_sdk::llm::{infer, InferencingModel};
+//!
+//! # fn run() -> anyhow::Result<()> {
+//! let result = infer(InferencingModel::Llama2Chat, "What is the capital of France?")?;
+//! println!("{}", result.text);
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! Generate embeddings for a batch of text:
+//!
+//! ```no_run
+//! use spin_sdk::llm::{generate_embeddings, EmbeddingModel};
+//!
+//! # fn run() -> anyhow::Result<()> {
+//! let text = &["I've just broken a priceless turnip".to_owned()];
+//! let result = generate_embeddings(EmbeddingModel::AllMiniLmL6V2, text)?;
+//! println!("embedding: {:?}", result.embeddings.first());
+//! # Ok(())
+//! # }
+//! ```
+
 #[doc(hidden)]
 /// Module containing wit bindgen generated code.
 ///

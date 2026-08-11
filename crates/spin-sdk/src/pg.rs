@@ -29,6 +29,32 @@
 //! | lower/upper tuple       | range-decimal(...)                            | NUMERICRANGE                 |
 //! | `Vec<Option<...>>`      | array-int32(...), array-int64(...), array-str(...), array-decimal(...) | INT4[], INT8[], TEXT[], NUMERIC[] |
 //! | `pg4::Interval`         | interval(interval)                            | INTERVAL                     |
+//!
+//! # Examples
+//!
+//! Query rows from a PostgreSQL database and iterate over the results:
+//!
+//! ```no_run
+//! use spin_sdk::pg::Connection;
+//!
+//! # async fn run() -> anyhow::Result<()> {
+//! # let year: i32 = 2025;
+//! let conn = Connection::open("host=localhost user=postgres dbname=cats").await?;
+//!
+//! let mut rows = conn.query(
+//!     "SELECT name FROM cats WHERE $1::int4 <@ reign",
+//!     &[year.into()],
+//! ).await?;
+//!
+//! while let Some(row) = rows.next().await {
+//!     let name = row.get::<String>("name").unwrap();
+//!     println!("Found cat {name}");
+//! }
+//!
+//! rows.result().await?;
+//! # Ok(())
+//! # }
+//! ```
 
 // pg4 errors can be large, because they now include a breakdown of the PostgreSQL
 // error fields instead of just a string

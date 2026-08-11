@@ -20,6 +20,32 @@
 //! | `f64`     | floating64(float64) | DOUBLE                  |
 //! | `String`  | str(string)         | VARCHAR, CHAR, TEXT     |
 //! | `Vec<u8>` | binary(list\<u8\>)  | VARBINARY, BINARY, BLOB |
+//!
+//! # Examples
+//!
+//! Query rows from a MySQL database and iterate over the results:
+//!
+//! ```no_run
+//! use spin_sdk::mysql::Connection;
+//!
+//! # async fn run() -> anyhow::Result<()> {
+//! # let min_age = 0;
+//! let db = Connection::open("mysql://root:my_password@localhost/mydb").await?;
+//!
+//! let mut query_result = db.query(
+//!     "SELECT name FROM users WHERE age >= ?",
+//!     &[min_age.into()],
+//! ).await?;
+//!
+//! while let Some(row) = query_result.next().await {
+//!     let name = row.get::<String>("name").unwrap();
+//!     println!("Found user {name}");
+//! }
+//!
+//! query_result.result().await?;
+//! # Ok(())
+//! # }
+//! ```
 
 use crate::wit_bindgen;
 use std::sync::Arc;
