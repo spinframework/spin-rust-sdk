@@ -416,6 +416,12 @@ pub trait IntoRequest {
     fn into_request(self) -> HttpResult<wasip3::http::types::Request>;
 }
 
+impl IntoRequest for wasip3::http::types::Request {
+    fn into_request(self) -> HttpResult<wasip3::http::types::Request> {
+        Ok(self)
+    }
+}
+
 impl<T> IntoRequest for http::Request<T>
 where
     T: http_body::Body + Any,
