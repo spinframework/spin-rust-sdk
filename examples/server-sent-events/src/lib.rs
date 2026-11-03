@@ -17,7 +17,7 @@ async fn handle_sse(request: Request) -> impl IntoResponse {
     if request.uri().path() == "/" {
         response = response.header("Content-Type", "text/html");
 
-        spin_sdk::wasip3::spawn(async move {
+        spin_sdk::wasip3::spawn_local(async move {
             let html = include_str!("test.html");
             tx.send(html.to_owned()).await.unwrap();
         });
@@ -26,7 +26,7 @@ async fn handle_sse(request: Request) -> impl IntoResponse {
             .header("Content-Type", "text/event-stream")
             .header("Cache-Control", "no-cache");
 
-        spin_sdk::wasip3::spawn(run_sse_loop(tx));
+        spin_sdk::wasip3::spawn_local(run_sse_loop(tx));
     } else {
         response = response.status(404);
     }

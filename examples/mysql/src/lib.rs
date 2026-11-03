@@ -93,7 +93,7 @@ async fn list() -> Result<Response<BoxBody>> {
 
     let (mut tx, body) = spin_sdk::http::body::stream();
 
-    spin_sdk::wasip3::spawn(
+    spin_sdk::wasip3::spawn_local(
         async move {
             let column_summary = qr
                 .columns()

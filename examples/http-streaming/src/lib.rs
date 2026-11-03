@@ -25,9 +25,9 @@ async fn handle_streaming(request: Request) -> impl IntoResponse {
     // side will be sent out over the HTTP response.
     let (mut tx, body) = body::stream::<Bytes>();
 
-    // Use wasip3::spawn to allow the async block to keep running
+    // Use wasip3::spawn_local to allow the async block to keep running
     // after the handler returns.
-    spin_sdk::wasip3::spawn(async move {
+    spin_sdk::wasip3::spawn_local(async move {
         tx.send("-- INBOUND MESSAGE --\n".into()).await.unwrap();
         // Keep processing data from the incoming body stream until it ends...
         loop {

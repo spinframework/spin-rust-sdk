@@ -76,7 +76,21 @@ extern "C" fn __spin_sdk_language() {}
 #[unsafe(export_name = concat!("spin-sdk-commit-", env!("SDK_COMMIT")))]
 extern "C" fn __spin_sdk_hash() {}
 
-pub use wasip3::{self, wit_bindgen};
+pub use ::wasip3::wit_bindgen;
+
+/// WASI Preview 3 bindings and task-spawning support.
+pub mod wasip3 {
+    pub use ::wasip3::*;
+
+    /// Spawn a unit-returning task without retaining its completion handle.
+    ///
+    /// This preserves the detached behaviour of the former `spawn` API.
+    /// Use [`spawn_local`] to retain the task's result and cancellation handle.
+    #[deprecated(note = "use `spawn_local` instead")]
+    pub fn spawn(future: impl core::future::Future<Output = ()> + 'static) {
+        drop(::wasip3::spawn_local(future));
+    }
+}
 
 #[doc(hidden)]
 pub mod experimental {

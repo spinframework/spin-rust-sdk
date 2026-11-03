@@ -8,7 +8,7 @@ use spin_sdk::http_service;
 
 // In this streaming scenario, the entry point is a shim
 // which kicks off the main async work of the application as
-// a `spawn` and then immediately returns a Response. The response
+// a `spawn_local` and then immediately returns a Response. The response
 // content will continue streaming from the "main application"
 // function despite the entry point having returned.
 #[http_service]
@@ -22,9 +22,9 @@ async fn handle_concurrent_outbound_http_calls(
     let (tx, body) = body::stream();
 
     // Spawn a task to run the application logic and stream the results
-    // to the client. `spawn` continues to run this future even after the
+    // to the client. `spawn_local` continues to run this future even after the
     // function has exited with the return of the Response object.
-    spin_sdk::wasip3::spawn(handle_concurrent_outbound_http_calls_impl(tx));
+    spin_sdk::wasip3::spawn_local(handle_concurrent_outbound_http_calls_impl(tx));
 
     Ok(http::Response::new(body))
 }

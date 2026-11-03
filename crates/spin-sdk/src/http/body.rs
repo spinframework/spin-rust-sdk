@@ -70,7 +70,7 @@ impl<T: IncomingMessage> IncomingBodyExt for IncomingBody<T> {
 ///
 /// let (mut tx, body) = stream::<String>();
 ///
-/// spin_sdk::wasip3::spawn(async move {
+/// spin_sdk::wasip3::spawn_local(async move {
 ///     for i in 0..10000 {
 ///         if tx.send(format!("{i}\n")).await.is_err() {
 ///             break;

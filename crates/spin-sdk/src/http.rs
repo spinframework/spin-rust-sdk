@@ -181,7 +181,7 @@ mod middleware {
         world: "spin-sdk-middleware",
         path: "wit",
         with: {
-            "wasi:http/types@0.3.0": wasip3::http::types,
+            "wasi:http/types@0.3.2": wasip3::http::types,
         },
         generate_all,
     });
