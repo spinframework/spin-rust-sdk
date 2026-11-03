@@ -9,7 +9,7 @@ on:
       - "README.md"
  
 env:
-  RUST_VERSION: "1.94"
+  RUST_VERSION: "1.97"
  
 jobs:
   lint-and-test:

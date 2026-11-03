@@ -19,7 +19,7 @@ use {
         component::{Component, Linker, ResourceTable},
     },
     wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView},
-    wasmtime_wasi_http::{WasiHttpCtx, p3::WasiHttpView},
+    wasmtime_wasi_http::{WasiHttpCtx, WasiHttpCtxView, WasiHttpView},
 };
 
 struct Ctx {
@@ -29,9 +29,9 @@ struct Ctx {
 }
 
 impl WasiHttpView for Ctx {
-    fn http(&mut self) -> wasmtime_wasi_http::p3::WasiHttpCtxView<'_> {
-        wasmtime_wasi_http::p3::WasiHttpCtxView {
-            hooks: wasmtime_wasi_http::p3::default_hooks(),
+    fn http(&mut self) -> WasiHttpCtxView<'_> {
+        WasiHttpCtxView {
+            hooks: wasmtime_wasi_http::default_hooks(),
             table: &mut self.table,
             ctx: &mut self.wasi_http,
         }
@@ -103,6 +103,7 @@ async fn http_response(component_name: &str) -> Result<(hyperium::StatusCode, by
     let (mut store, linker) = store_and_linker()?;
 
     let (request, fut) = wasmtime_wasi_http::p3::Request::from_http(
+        wasmtime_wasi_http::default_hooks(),
         crate::http::Request::post("http://localhost:3000").body(crate::http::FullBody::new(
             bytes::Bytes::copy_from_slice(b"test"),
         ))?,
