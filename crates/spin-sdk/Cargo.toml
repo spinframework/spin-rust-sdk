@@ -74,7 +74,7 @@ tokio = { version = "1.48.0", features = [
   "sync",
   "time",
 ] }
-wasmtime = { version = "47.0.2" }
-wasmtime-wasi = "47.0.2"
-wasmtime-wasi-http = { version = "47.0.2", features = ["p3"] }
+wasmtime = { version = "50.0.1" }
+wasmtime-wasi = "50.0.1"
+wasmtime-wasi-http = { version = "50.0.1", features = ["p3"] }
 wit-component = "0.247"
