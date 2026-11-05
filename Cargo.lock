@@ -2072,7 +2072,7 @@ dependencies = [
 
 [[package]]
 name = "spin-macro"
-version = "7.0.0"
+version = "8.0.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2090,7 +2090,7 @@ dependencies = [
 
 [[package]]
 name = "spin-sdk"
-version = "7.0.0"
+version = "8.0.0"
 dependencies = [
  "anyhow",
  "bytes",
